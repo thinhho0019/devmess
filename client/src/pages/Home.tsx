@@ -3,7 +3,7 @@ import { FaSearch } from "react-icons/fa";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import imgAvatar from "../assets/img.jpg"
 import { Avatar } from "../components/avatar";
-import  { ChatView, type Chat } from "../components/chat";
+import  { ChatView  } from "../components/chat";
 interface ChatMessage {
   id: number;
   name: string;

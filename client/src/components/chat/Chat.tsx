@@ -77,6 +77,7 @@ const ChatView: React.FC<ChatProps> = ({
     const [mess, setMess] = useState<Chat[]>(chats as Chat[]);
     const scrollRef = useRef<HTMLDivElement>(null)
     const onSend = (trimed: string, file: File | null) => {
+        console.log(file);
         const newMessage: Chat = {
             id: "msg_005",
             message: trimed,

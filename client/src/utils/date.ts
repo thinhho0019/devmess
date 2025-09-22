@@ -54,7 +54,7 @@ export const convertTimeMessage = (str: string, timezone: number): string | "" =
         const hours = pad(localTime.getUTCHours());
         const minutes = pad(localTime.getUTCMinutes());
         return `${hours}:${minutes}`;
-    } catch (e) {
+    } catch  {
         return "";
     }
 };

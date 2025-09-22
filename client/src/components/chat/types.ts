@@ -200,6 +200,7 @@ export interface ChatEvent {
   type: 'message' | 'typing' | 'user_join' | 'user_leave' | 'reaction' | 'delete' | 'edit';
   chat_id: string;
   user_id: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
   timestamp: string;
 }
