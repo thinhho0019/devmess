@@ -23,12 +23,15 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+        
       - name: Run tests
         run: npm test -- --watchAll=false
 
@@ -36,7 +39,7 @@ jobs:
         run: npm run build
 
       - name: Upload frontend build
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: client/dist
@@ -69,32 +72,8 @@ jobs:
         run: go build -o app main.go
 
       - name: Upload backend binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: backend-binary
           path: server/app
-
-  # ---------- DEPLOY (optional) ----------
-  # deploy:
-  #   name: Deploy Application
-  #   needs: [frontend, backend]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Download frontend build
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: frontend-dist
-  #         path: frontend-dist
-
-  #     - name: Download backend binary
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: backend-binary
-  #         path: backend-binary
-
-  #     # Ví dụ: deploy lên server bằng SCP/SSH
-  #     - name: Deploy to server
-  #       run: |
-  #         echo "Deploying frontend + backend..."
-  #         # scp -r frontend-dist/* user@your-server:/var/www/html
-  #         # scp backend-binary/app user@your-server:/usr/local/bin/app
+ 
