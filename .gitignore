@@ -1,0 +1,39 @@
+# =========================
+# Node / React / Vite (client)
+# =========================
+client/node_modules/
+client/dist/
+client/.env
+client/.DS_Store
+client/.vite/
+
+# Logs
+client/npm-debug.log*
+client/yarn-debug.log*
+client/yarn-error.log*
+
+# Editor / OS files
+client/.idea/
+client/.vscode/
+client/.DS_Store
+
+# =========================
+# Go (server)
+# =========================
+server/bin/
+server/build/
+server/vendor/
+server/.env
+server/.DS_Store
+
+# Go specific
+server/*.exe
+server/*.exe~
+server/*.dll
+server/*.so
+server/*.dylib
+
+# Editor / OS files
+server/.idea/
+server/.vscode/
+server/.DS_Store

@@ -1,0 +1,100 @@
+name: CI/CD Pipeline webchat devmess
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # ---------- FRONTEND (React Vite) ----------
+  frontend:
+    name: Build & Test Frontend
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --watchAll=false
+
+      - name: Build Vite project
+        run: npm run build
+
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-dist
+          path: client/dist
+
+  # ---------- BACKEND (Go) ----------
+  backend:
+    name: Build & Test Backend
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.21
+
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Run Go tests
+        run: go test ./...
+
+      - name: Build Go binary
+        run: go build -o app main.go
+
+      - name: Upload backend binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-binary
+          path: server/app
+
+  # ---------- DEPLOY (optional) ----------
+  # deploy:
+  #   name: Deploy Application
+  #   needs: [frontend, backend]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Download frontend build
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: frontend-dist
+  #         path: frontend-dist
+
+  #     - name: Download backend binary
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: backend-binary
+  #         path: backend-binary
+
+  #     # Ví dụ: deploy lên server bằng SCP/SSH
+  #     - name: Deploy to server
+  #       run: |
+  #         echo "Deploying frontend + backend..."
+  #         # scp -r frontend-dist/* user@your-server:/var/www/html
+  #         # scp backend-binary/app user@your-server:/usr/local/bin/app
