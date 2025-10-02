@@ -40,9 +40,11 @@ export interface ChatAttachment {
 
 // Interface cho reaction
 export interface MessageReaction {
+  id?: string,
   emoji: string;
   user_ids: string[];
   count: number;
+  type:string;
 }
 
 // Interface cho reply/thread

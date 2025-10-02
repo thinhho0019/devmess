@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import type { Chat, ChatProps } from "./types";
+import type { Chat, ChatProps, MessageReaction } from "./types";
 import { convertTimeMessage, getTimeIsoCurrent } from "../../utils/date"
 import ChatInput from "../inputchat/InputChat";
-
+import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
+import EmojiBox from "../emoji/emojiBox";
 const ChatView: React.FC<ChatProps> = ({
     id,
     name = "thinhho",
@@ -19,8 +20,8 @@ const ChatView: React.FC<ChatProps> = ({
             hashtags: ["projectX", "urgent"],
             links: ["https://github.com/example/repo/pull/123"],
             reactions: [
-                { user_id: "user_002", emoji: "👍" },
-                { user_id: "user_003", emoji: "🔥" },
+                { user_ids: ["user_002"], emoji: "👍", count: 20, type: "like" },
+                { user_ids: ["user_003"], emoji: "🔥", count: 20, type: "fire" }
             ],
             thread_id: "thread_001",
         },
@@ -62,6 +63,11 @@ const ChatView: React.FC<ChatProps> = ({
             user_id: "user_003",
             is_deleted: true,
             deleted_at: "2025-09-21T10:16:00Z",
+            reactions: [
+                { user_ids: ["user_002"], emoji: "👍", count: 20, type: "like" },
+                { user_ids: ["user_003"], emoji: "🔥", count: 20, type: "fire" },
+                { user_ids: ["user_002"], emoji: "❤️", count: 1, type: "heart" },
+            ],
         },
         {
             id: "msg_005",
@@ -75,11 +81,58 @@ const ChatView: React.FC<ChatProps> = ({
     ]
 }) => {
     const [mess, setMess] = useState<Chat[]>(chats as Chat[]);
-    const scrollRef = useRef<HTMLDivElement>(null)
+    const [clickedHeart, setClickedHeart] = useState<boolean>(false);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const handleClickedHeart = (id?: string) => {
+
+        setMess(prevChats => {
+
+            const newChats = [...prevChats];
+
+
+            const idx = newChats.findIndex(c => c.id === id);
+            console.log(idx)
+            if (idx === -1) return prevChats;
+
+
+            const chat = { ...newChats[idx] };
+
+
+            if (!chat.reactions) {
+                chat.reactions = [
+                    { user_ids: ["user_002"], emoji: "❤️", count: 1, type: "heart" },
+                ];
+            } else {
+                const heart = chat.reactions.find(c => c.type === "heart");
+                console.log(heart?.count)
+                if (heart) {
+                    console.log(heart?.count)
+                    heart.count += 1;
+                    console.log(heart?.count)
+                    if (!heart.user_ids.includes("user_002")) {
+                        heart.user_ids = [...heart.user_ids, "user_002"];
+                    }
+                } else {
+                    chat.reactions = [
+                        ...chat.reactions,
+                        { user_ids: ["user_002"], emoji: "❤️", count: 1, type: "heart" },
+                    ];
+                }
+            }
+
+            // gán lại vào mảng clone
+            newChats[idx] = chat;
+
+            // trả về mảng mới -> React render lại
+            return newChats;
+        });
+        setClickedHeart(!clickedHeart);
+    }
     const onSend = (trimed: string, file: File | null) => {
         console.log(file);
+        const new_user_id = "msg_" + crypto.randomUUID().replace(/-/g, '');
         const newMessage: Chat = {
-            id: "msg_005",
+            id: new_user_id,
             message: trimed,
             created_at: getTimeIsoCurrent(),
             user_id: "user_999",
@@ -97,11 +150,58 @@ const ChatView: React.FC<ChatProps> = ({
 
         console.log(trimed);
     };
+    const handleClickEmoji = (emoji: MessageReaction, id?: string) => {
+        console.log(id)
+        console.log(emoji.user_ids);
+        console.log(emoji.type);
+        setMess(prevChats => {
+
+            const newChats = [...prevChats];
+
+
+            const idx = newChats.findIndex(c => c.id === id);
+            console.log(idx)
+            if (idx === -1) return prevChats;
+
+
+            const chat = { ...newChats[idx] };
+
+
+            if (!chat.reactions) {
+                chat.reactions = [
+                    { user_ids: ["user_002"], emoji: emoji.emoji, count: 1, type: emoji.type },
+                ];
+            } else {
+                const heart = chat.reactions.find(c => c.type === emoji.type);
+                console.log(heart?.count)
+                if (heart) {
+                    console.log(heart?.count)
+                    heart.count += 1;
+                    console.log(heart?.count)
+                    if (!heart.user_ids.includes("user_002")) {
+                        heart.user_ids = [...heart.user_ids, "user_002"];
+                    }
+                } else {
+                    chat.reactions = [
+                        ...chat.reactions,
+                        { user_ids: ["user_002"], emoji: emoji.emoji, count: 1, type: emoji.type },
+                    ];
+                }
+            }
+
+            // gán lại vào mảng clone
+            newChats[idx] = chat;
+
+            // trả về mảng mới -> React render lại
+            return newChats;
+        });
+    }
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [mess])
+    }, [mess]);
+
     return (
         <div
             key={id}
@@ -112,23 +212,29 @@ const ChatView: React.FC<ChatProps> = ({
                 <h3 className="font-semibold">{name}</h3>
                 {img && <img src={img} alt={name} className="w-10 h-10 rounded-full" />}
             </div>
-
             <div ref={scrollRef} className="w-full  overflow-y-auto chat-scroll">
-                <div className="h-full flex-col max-w-4xl mx-auto px-6 py-4 shadow">
-
+                <div className="h-full flex-col max-w-4xl mx-auto px-6 py-4 shadow space-y-1" >
                     {mess.map((c, i) => (
-                        <div key={i} className={`flex ${c.user_id === "user_002" ? "justify-start" : "justify-end"}`}>
-                            <div className={`w-fit max-w-[400px] text-sm bg-blue-500 mb-2 px-3 py-2 rounded-xl`}>
+                        <div key={i} className={`flex ${c.user_id === "user_002" ? "justify-start" : "justify-end"}  `}>
+
+                            <div className={`relative w-fit max-w-[400px] text-sm bg-blue-500 pl-2 pt-2 pr-2 pb-0.2 rounded-xl`}>
                                 <div key={i} className="text-[15px]">{c.message}</div>
+                                <EmojiBox emojis={c.reactions} onSelect={(emoji) => handleClickEmoji(emoji, c.id)} />
                                 <div className="flex justify-end">
                                     <span className="text-[10px] text-gray-200">{convertTimeMessage(c.created_at, 7)}</span>
                                 </div>
+                                <span
+                                    className={`absolute ${c.user_id === "user_002" ? "-bottom-2 -right-3" : "-bottom-2 -left-3"
+                                        } h-6 w-6 flex items-center justify-center`}
+                                >
+                                    <HeartSolid onClick={() => handleClickedHeart(c.id)} className={`${clickedHeart ? "h-10 w-10" : "h-6 w-6"}  ease-in-out text-red-500 opacity-0 transition-opacity duration-500 hover:opacity-100`} fill="currentColor" />
+                                </span>
+
                             </div>
+
                         </div>
                     ))}
-
                 </div>
-
             </div>
 
             <div className="bg-blue-200 h-full">

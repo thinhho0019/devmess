@@ -23,8 +23,6 @@ export default function ChatInput({
         setText(value);
     }, [value]);
 
-
-
     const handleSend = async () => {
         if (disabled || isSending) return;
         const trimmed = text.trim();
