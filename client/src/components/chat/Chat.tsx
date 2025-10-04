@@ -144,7 +144,7 @@ const ChatView: React.FC<ChatProps> = ({
         setClickedHeart(!clickedHeart);
     }
     const onSend = (trimed: string, file: File | null) => {
-
+        console.log(file);
         const new_user_id = "msg_" + crypto.randomUUID().replace(/-/g, '');
         const newMessage: Chat = {
             id: new_user_id,

@@ -14,7 +14,7 @@ export default function EmojiBox({ emojis, onSelect, title }: EmojiBoxProps) {
                         key={emoji.id}
                         onClick={(e) => {
                             e.stopPropagation();
-                            onSelect && onSelect(emoji)
+                            if (onSelect) onSelect(emoji);
                         }}
                         className="hover:scale-110 text-xs min-w-[50px] max-w-[100px] flex items-center justify-center  transition-transform duration-150 bg-white rounded-2xl pl-1 pr-1 pt-1 pb-1  "
                     >

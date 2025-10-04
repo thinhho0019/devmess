@@ -28,7 +28,7 @@ export const EmojiPopup: React.FC<EmojiPopupProps> = ({ show, position, emojis, 
                     className="grid grid-cols-8 gap-2 bg-black pl-2 pr-2 shadow-lg rounded-xl"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {emojis.map((emoji: any, idx: number) => (
+                    {emojis.map((emoji: EmojiData, idx: number) => (
                         <motion.button
                             key={idx}
                             whileHover={{ scale: 1.7, rotate: 15 }}
