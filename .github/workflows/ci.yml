@@ -109,7 +109,7 @@ jobs:
           source: |
             dist/*
             app/*
-            docker-compose.yml
+            docker-compose.yaml
           target: /var/www/devmess
 
       # SSH vào server để setup & run docker compose
