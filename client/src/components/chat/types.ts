@@ -45,6 +45,7 @@ export interface MessageReaction {
   user_ids: string[];
   count: number;
   type:string;
+  description?:string
 }
 
 // Interface cho reply/thread
@@ -246,3 +247,8 @@ export interface SendMessageResponse {
   chat: Chat;
   error?: string;
 }
+export type EmojiData = {
+  emoji: string;
+  type: string;
+  description: string;
+};

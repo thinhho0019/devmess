@@ -1,9 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
-import type { Chat, ChatProps, MessageReaction } from "./types";
+import type { Chat, ChatProps, EmojiData, MessageReaction } from "./types";
 import { convertTimeMessage, getTimeIsoCurrent } from "../../utils/date"
 import ChatInput from "../inputchat/InputChat";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import EmojiBox from "../emoji/emojiBox";
+import { EmojiPopup } from "../emoji/emojiPopUp";
+const emojis = [
+    { emoji: "😀", type: "smile", description: "Cười vui vẻ" },
+    { emoji: "😂", type: "laugh", description: "Cười chảy nước mắt" },
+    { emoji: "😍", type: "love", description: "Thả tim, yêu thích" },
+    { emoji: "😎", type: "cool", description: "Ngầu lòi" },
+    { emoji: "👍", type: "like", description: "Đồng ý, thích" },
+    { emoji: "🔥", type: "fire", description: "Tuyệt vời, nóng bỏng" },
+    { emoji: "🎉", type: "party", description: "Ăn mừng" },
+    { emoji: "❤️", type: "heart", description: "Thả tim, yêu thương" },
+];
 const ChatView: React.FC<ChatProps> = ({
     id,
     name = "thinhho",
@@ -48,7 +59,7 @@ const ChatView: React.FC<ChatProps> = ({
         },
         {
             id: "msg_003",
-            message: "Oops, wrong file. Let me re-upload.",
+            message: "O",
             created_at: "2025-09-21T10:10:00Z",
             updated_at: "2025-09-21T10:12:00Z",
             user_id: "user_002",
@@ -80,6 +91,10 @@ const ChatView: React.FC<ChatProps> = ({
         }
     ]
 }) => {
+    const [showEmoji, setShowEmoji] = useState(false);
+    const [posEmoji, setPosEmoji] = useState({ top: 0, left: 0 });
+    const [idItemClick, setIdItemClick] = useState("");
+    const boxRef = useRef<{ [key: string]: HTMLDivElement | null }>({});;
     const [mess, setMess] = useState<Chat[]>(chats as Chat[]);
     const [clickedHeart, setClickedHeart] = useState<boolean>(false);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -91,7 +106,7 @@ const ChatView: React.FC<ChatProps> = ({
 
 
             const idx = newChats.findIndex(c => c.id === id);
-            console.log(idx)
+
             if (idx === -1) return prevChats;
 
 
@@ -129,7 +144,7 @@ const ChatView: React.FC<ChatProps> = ({
         setClickedHeart(!clickedHeart);
     }
     const onSend = (trimed: string, file: File | null) => {
-        console.log(file);
+
         const new_user_id = "msg_" + crypto.randomUUID().replace(/-/g, '');
         const newMessage: Chat = {
             id: new_user_id,
@@ -151,16 +166,13 @@ const ChatView: React.FC<ChatProps> = ({
         console.log(trimed);
     };
     const handleClickEmoji = (emoji: MessageReaction, id?: string) => {
-        console.log(id)
-        console.log(emoji.user_ids);
-        console.log(emoji.type);
         setMess(prevChats => {
 
             const newChats = [...prevChats];
 
 
             const idx = newChats.findIndex(c => c.id === id);
-            console.log(idx)
+
             if (idx === -1) return prevChats;
 
 
@@ -173,11 +185,11 @@ const ChatView: React.FC<ChatProps> = ({
                 ];
             } else {
                 const heart = chat.reactions.find(c => c.type === emoji.type);
-                console.log(heart?.count)
+
                 if (heart) {
-                    console.log(heart?.count)
+
                     heart.count += 1;
-                    console.log(heart?.count)
+
                     if (!heart.user_ids.includes("user_002")) {
                         heart.user_ids = [...heart.user_ids, "user_002"];
                     }
@@ -196,12 +208,82 @@ const ChatView: React.FC<ChatProps> = ({
             return newChats;
         });
     }
+    const handleSelectEmoji = async (emoji: EmojiData, id: string) => {
+        setMess(prevChats => {
+
+            const newChats = [...prevChats];
+
+
+            const idx = newChats.findIndex(c => c.id === id);
+
+            if (idx === -1) return prevChats;
+
+
+            const chat = { ...newChats[idx] };
+
+
+            if (!chat.reactions) {
+                chat.reactions = [
+                    { user_ids: ["user_002"], emoji: emoji.emoji, count: 1, type: emoji.type },
+                ];
+            } else {
+                const heart = chat.reactions.find(c => c.type === emoji.type);
+
+                if (heart) {
+
+                    heart.count += 1;
+
+                    if (!heart.user_ids.includes("user_002")) {
+                        heart.user_ids = [...heart.user_ids, "user_002"];
+                    }
+                } else {
+                    chat.reactions = [
+                        ...chat.reactions,
+                        { user_ids: ["user_002"], emoji: emoji.emoji, count: 1, type: emoji.type },
+                    ];
+                }
+            }
+
+            // gán lại vào mảng clone
+            newChats[idx] = chat;
+
+            // trả về mảng mới -> React render lại
+            return newChats;
+        });
+        await new Promise(r => setTimeout(r, 500));
+        setShowEmoji(false);
+    };
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            const el = boxRef.current[idItemClick];
+            if (boxRef.current && !el?.contains(e.target as Node)) {
+                setShowEmoji(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [mess]);
+    const handleOpenEmoji = (pre: boolean, id: string, is_send: boolean) => {
+        setIdItemClick(id);
+        setShowEmoji(!pre);
 
+        // 🔹 Lấy ref theo id
+        const el = boxRef.current[id];
+        if (el) {
+            const rect = el.getBoundingClientRect();
+            console.log(rect);
+
+            setPosEmoji({
+                top: rect.top - 40,
+                left: is_send ? rect.left + 100 : rect.left - 200,
+            });
+        }
+    };
     return (
         <div
             key={id}
@@ -214,10 +296,12 @@ const ChatView: React.FC<ChatProps> = ({
             </div>
             <div ref={scrollRef} className="w-full  overflow-y-auto chat-scroll">
                 <div className="h-full flex-col max-w-4xl mx-auto px-6 py-4 shadow space-y-1" >
+
                     {mess.map((c, i) => (
+
                         <div key={i} className={`flex ${c.user_id === "user_002" ? "justify-start" : "justify-end"}  `}>
 
-                            <div className={`relative w-fit max-w-[400px] text-sm bg-blue-500 pl-2 pt-2 pr-2 pb-0.2 rounded-xl`}>
+                            <div ref={(el) => { boxRef.current[c.id] = el; }} onClick={() => handleOpenEmoji(showEmoji, c.id, c.user_id === "user_002")} className={`relative w-fit max-w-[400px] text-sm bg-blue-500 pl-2 pt-2 pr-2 pb-0.2 rounded-xl`}>
                                 <div key={i} className="text-[15px]">{c.message}</div>
                                 <EmojiBox emojis={c.reactions} onSelect={(emoji) => handleClickEmoji(emoji, c.id)} />
                                 <div className="flex justify-end">
@@ -227,8 +311,16 @@ const ChatView: React.FC<ChatProps> = ({
                                     className={`absolute ${c.user_id === "user_002" ? "-bottom-2 -right-3" : "-bottom-2 -left-3"
                                         } h-6 w-6 flex items-center justify-center`}
                                 >
-                                    <HeartSolid onClick={() => handleClickedHeart(c.id)} className={`${clickedHeart ? "h-10 w-10" : "h-6 w-6"}  ease-in-out text-red-500 opacity-0 transition-opacity duration-500 hover:opacity-100`} fill="currentColor" />
+                                    <HeartSolid onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleClickedHeart(c.id);
+                                    }} className={`z-10 ${clickedHeart ? "h-10 w-10" : "h-6 w-6"}  ease-in-out text-red-500 opacity-0 transition-opacity duration-500 hover:opacity-100`} fill="currentColor" />
                                 </span>
+                                {showEmoji && c.id === idItemClick && (
+                                    <EmojiPopup show={showEmoji} position={posEmoji} emojis={emojis} onSelect={(emoji) => handleSelectEmoji(emoji, c.id)} />
+                                )
+                                }
+
 
                             </div>
 
