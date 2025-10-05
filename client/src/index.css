@@ -6,7 +6,6 @@
   margin: 0;
   padding: 0;
   font-family: 'Be Vietnam Pro', sans-serif;
-  overflow: hidden;
   /* nếu muốn tránh scroll toàn trang */
   -webkit-user-select: none;
   /* Safari */

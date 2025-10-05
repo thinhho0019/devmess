@@ -1,15 +1,18 @@
 import { Routes, Route  } from "react-router-dom";
- 
-import Home from "./pages/Home";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import "./App.css"
+import HomeChat from "./pages/HomeChat";
+import HomePage from "./pages/Home";  
+ 
+
 function App() {
    
   return (
     <>
     <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={<HomePage />} />
+      <Route path="/t" element={<HomeChat />} />
       <Route path="/about" element={<About />} />
       <Route path="/*" element={<NotFound />} />
     </Routes>

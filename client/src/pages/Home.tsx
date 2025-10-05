@@ -1,84 +1,113 @@
+import { FiArrowRight, FiLock, FiZap, FiSmartphone, FiGlobe, FiChevronDown } from "react-icons/fi";
+import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
-import { FaSearch } from "react-icons/fa";
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import imgAvatar from "../assets/img.jpg"
-import { Avatar } from "../components/avatar";
-import  { ChatView  } from "../components/chat";
-interface ChatMessage {
-  id: number;
-  name: string;
-  lastMessage: string;
-  time: string;
-}
 
-const chats: ChatMessage[] = [
-  { id: 1, name: "Temp", lastMessage: "SEED created the group «Temp»", time: "Aug 14" },
-  { id: 2, name: "Telegram", lastMessage: "Login code: ••••", time: "Jul 27" },
-  { id: 3, name: "GROUP_FILE_BACKUP", lastMessage: "backup_live_novel.rar", time: "Mar 11" },
-  { id: 4, name: "Wallet", lastMessage: "Say hello to Wallet in Vietnam", time: "Mar 6" },
-  { id: 5, name: "More chat", lastMessage: "Message content here", time: "Sep 15" },
-  // ...thêm nhiều chat test scroll
-];
+export default function HomePage() {
+  const { t, i18n } = useTranslation();
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
 
-export default function Home() {
-  const [selected, setSelected] = useState<ChatMessage | null>(null);
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+    setLangDropdownOpen(false);
+  };
 
   return (
-    <div className="h-screen w-screen"> <PanelGroup direction="horizontal" className="flex h-full w-full overflow-hidden bg-gray-900 text-white">
-      <Panel defaultSize={25} minSize={18} maxSize={30}>
-        <div className="flex flex-col w-full h-full border-r border-gray-700">
-          {/* Search */}
-          <div className="flex items-center p-3">
-            <FaSearch className="w-5 h-5 text-gray-400 mr-2 flex-shrink-0" />
-            <input
-              type="text"
-              placeholder="Search"
-              className="flex-1 h-8 rounded bg-gray-800 text-white placeholder-gray-400 px-3 focus:outline-none"
-            />
+    <div className="chat-scroll bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+      {/* Header */}
+      <header className="container mx-auto px-6 py-4 flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">{t('header_title')}</h1>
+        <nav className="flex items-center space-x-6">
+          <a href="#features" className="hover:text-blue-500">{t('features')}</a>
+          <a href="#about" className="hover:text-blue-500">{t('about')}</a>
+          
+          {/* Language Selector */}
+          <div className="relative">
+            <button 
+              onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+              className="flex items-center hover:text-blue-500"
+            >
+              <FiGlobe className="mr-1" />
+              <span>{i18n.language.toUpperCase()}</span>
+              <FiChevronDown className={`ml-1 transition-transform ${langDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {langDropdownOpen && (
+              <div className="absolute right-0 mt-2 py-2 w-28 bg-white dark:bg-gray-800 rounded-md shadow-xl z-20">
+                <button onClick={() => changeLanguage('en')} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-500 w-full text-left">
+                  English
+                </button>
+                <button onClick={() => changeLanguage('vi')} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-500 w-full text-left">
+                  Tiếng Việt
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Chat list */}
-          <div className="flex-1 min-h-0 p-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
-            {chats.map(chat => (
-              <div
-                key={chat.id}
-                onClick={() => setSelected(chat)}
-                className={`flex relative z-10 cursor-pointer rounded-xl p-2  hover:bg-[#5b52da]
-    ${selected?.id === chat.id ? "bg-[#5b52da]" : "hover:bg-gray-700 transition-colors duration-230"}`}
-              >
-                <Avatar src={imgAvatar} size="lg" />
-                <div className="w-full h-full pl-2">
+          <Link to="/t" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-300">
+            {t('launch_app')}
+          </Link>
+        </nav>
+      </header>
 
-                  <div className="flex justify-between items-center min-w-0">
-                    <span className="lg:text-base sm:text-sm font-semibold truncate overflow-hidden whitespace-nowrap">
-                      {chat.name}
-                    </span>
-                    <span className="text-xs text-gray-400">{chat.time}</span>
-                  </div>
-                  <p className="lg:text-base sm:text-sm text-gray-400 truncate overflow-hidden whitespace-nowrap">
-                    {chat.lastMessage}
-                  </p>
-                </div>
+      {/* Hero Section */}
+      <main className="container mx-auto px-6 text-center pt-24 pb-16">
+        <h2 className="text-5xl md:text-6xl font-extrabold leading-tight mb-4">
+          {t('hero_title')}
+        </h2>
+        <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-8">
+          {t('hero_subtitle')}
+        </p>
+        <Link to="/chat">
+          <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition duration-300 inline-flex items-center">
+            {t('start_chatting')} <FiArrowRight className="ml-2" />
+          </button>
+        </Link>
+      </main>
+
+      {/* Features Section */}
+      <section id="features" className="py-20 bg-white dark:bg-gray-800">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-12">
+            <h3 className="text-4xl font-bold">{t('why_choose')}</h3>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">{t('features_subtitle')}</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-12">
+            <div className="text-center p-6">
+              <div className="inline-block p-4 bg-blue-100 dark:bg-blue-900 rounded-full mb-4">
+                <FiLock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               </div>
-            ))}
+              <h4 className="text-xl font-semibold mb-2">{t('feature_encryption_title')}</h4>
+              <p className="text-gray-600 dark:text-gray-400">
+                {t('feature_encryption_desc')}
+              </p>
+            </div>
+            <div className="text-center p-6">
+              <div className="inline-block p-4 bg-green-100 dark:bg-green-900 rounded-full mb-4">
+                <FiZap className="w-8 h-8 text-green-600 dark:text-green-400" />
+              </div>
+              <h4 className="text-xl font-semibold mb-2">{t('feature_fast_title')}</h4>
+              <p className="text-gray-600 dark:text-gray-400">
+                {t('feature_fast_desc')}
+              </p>
+            </div>
+            <div className="text-center p-6">
+              <div className="inline-block p-4 bg-purple-100 dark:bg-purple-900 rounded-full mb-4">
+                <FiSmartphone className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+              </div>
+              <h4 className="text-xl font-semibold mb-2">{t('feature_modern_title')}</h4>
+              <p className="text-gray-600 dark:text-gray-400">
+                {t('feature_modern_desc')}
+              </p>
+            </div>
           </div>
         </div>
-      </Panel>
-      <PanelResizeHandle />
-      <Panel minSize={30}>
-        <ChatView id="ak47" name={selected?.name} />
-        {/* <div className="flex-1 min-w-0 flex items-center justify-center overflow-hidden">
-          {selected ? (
-            <div className="text-center px-4">
-              <h2 className="text-2xl font-bold">{selected.name}</h2>
-              <p className="text-gray-400 mt-2">Chat content here...</p>
-            </div>
-          ) : (
-            <p className="text-gray-600">Select a chat to start messaging</p>
-          )}
-        </div> */}
-      </Panel>
-    </PanelGroup></div>
+      </section>
 
+      {/* Footer */}
+      <footer className="container mx-auto px-6 py-8 text-center text-gray-500">
+        <p dangerouslySetInnerHTML={{ __html: t('footer_copyright') }} />
+        <p className="mt-1">{t('footer_tagline')}</p>
+      </footer>
+    </div>
   );
 }

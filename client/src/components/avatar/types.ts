@@ -3,6 +3,7 @@ export interface AvatarProps {
   alt?: string;          // alt text
   size?: "sm" | "md" | "lg"; // kích thước
   rounded?: boolean;     // bo tròn hay không
+  online?: boolean;      // trạng thái online
 }
 
 export interface AvatarGroupProps {

@@ -13,15 +13,23 @@ const Avatar: React.FC<AvatarProps> = ({
   alt = "avatar",
   size = "md",
   rounded = true,
+  online = false,
 }) => {
   return (
-    <img
-      src={src || imgAvatar}
-      alt={alt}
-      className={`${sizeClasses[size]} ${
-        rounded ? "rounded-full" : "rounded-md"
-      } object-cover border border-gray-700`}
-    />
+    <div className="relative">
+      <img
+        src={src || imgAvatar}
+        alt={alt}
+        className={`${sizeClasses[size]} ${
+          rounded ? "rounded-full" : "rounded-md"
+        } object-cover border-2 border-gray-200 dark:border-gray-700`}
+      />
+      {online && (
+        <span
+          className={`absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 border-2 border-white dark:border-gray-900`}
+        />
+      )}
+    </div>
   );
 };
 

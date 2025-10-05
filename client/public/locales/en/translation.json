@@ -1,0 +1,19 @@
+{
+  "header_title": "DevMess",
+  "features": "Features",
+  "about": "About",
+  "launch_app": "Launch App",
+  "hero_title": "Secure, Fast, and Private Messaging.",
+  "hero_subtitle": "Experience the next generation of communication. Our platform offers end-to-end encryption, ensuring your conversations stay private, always.",
+  "start_chatting": "Start Chatting Securely",
+  "why_choose": "Why Choose DevMess?",
+  "features_subtitle": "The features that make us stand out.",
+  "feature_encryption_title": "End-to-End Encryption",
+  "feature_encryption_desc": "Only you and the person you're communicating with can read what's sent. No one in between, not even us.",
+  "feature_fast_title": "Blazing Fast",
+  "feature_fast_desc": "Messages are delivered instantly. Our lightweight and optimized platform ensures a seamless experience.",
+  "feature_modern_title": "Modern & Cross-Platform",
+  "feature_modern_desc": "Enjoy a beautiful, intuitive interface on any device. Web, desktop, and mobile are always in sync.",
+  "footer_copyright": "&copy; 2025 DevMess. All Rights Reserved.",
+  "footer_tagline": "Privacy, redefined."
+}

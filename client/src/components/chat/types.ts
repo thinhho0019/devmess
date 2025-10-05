@@ -137,6 +137,9 @@ export interface ChatProps {
   users?: ChatUser[];
   current_user_id?: string;
   
+  // Callbacks
+  onBack?: () => void;
+
   // Chat metadata
   created_at?: string;
   updated_at?: string;
