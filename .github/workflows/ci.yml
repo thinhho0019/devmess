@@ -120,7 +120,7 @@ jobs:
           script: |
             cd /var/www/devmess
             echo "🔑 Granting execute permission..."
-            sudo chmod +x app
+            sudo chmod +x server_bin/app
 
             echo "⚙️ Creating systemd service..."
             sudo bash -c 'cat > /etc/systemd/system/devmess-backend.service <<EOF
@@ -131,7 +131,7 @@ jobs:
             [Service]
             User=root
             WorkingDirectory=/var/www/devmess
-            ExecStart=/var/www/devmess/app
+            ExecStart=/var/www/devmess/server_bin/app
             Restart=always
 
             [Install]
