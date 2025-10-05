@@ -4,6 +4,7 @@ import { convertTimeMessage, getTimeIsoCurrent } from "../../utils/date"
 import ChatInput from "../inputchat/InputChat";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import EmojiBox from "../emoji/emojiBox";
+import { v4 as uuidv4 } from 'uuid';
 import { EmojiPopup } from "../emoji/emojiPopUp";
 const emojis = [
     { emoji: "😀", type: "smile", description: "Cười vui vẻ" },
@@ -145,7 +146,7 @@ const ChatView: React.FC<ChatProps> = ({
     }
     const onSend = (trimed: string, file: File | null) => {
         console.log(file);
-        const new_user_id = "msg_" + crypto.randomUUID().replace(/-/g, '');
+        const new_user_id = "msg_" + uuidv4().replace(/-/g, '');
         const newMessage: Chat = {
             id: new_user_id,
             message: trimed,
