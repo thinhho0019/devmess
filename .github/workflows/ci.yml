@@ -151,7 +151,7 @@ jobs:
             cat << 'EOF' | sudo tee /etc/nginx/sites-available/devmess
             server {
                 listen 80;
-                server_name _;
+                server_name devmess.cloud www.devmess.cloud;
 
                 root /var/www/devmess/dist;
                 index index.html;
