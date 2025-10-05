@@ -108,7 +108,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "frontend_dist/*,server_bin/app"
+          source: "frontend_dist,server_bin/app"
           target: /var/www/devmess
 
       - name: Deploy Backend & Setup Nginx
