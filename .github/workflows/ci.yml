@@ -108,7 +108,6 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: |
             dist/*
-            app/*
             docker-compose.yaml
           target: /var/www/devmess
 
