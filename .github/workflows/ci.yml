@@ -102,9 +102,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: |
-            dist/*
-            docker-compose.yaml
+          source: dist/*,docker-compose.yaml
           target: /var/www/devmess
 
       # SSH vào server để setup & run docker compose
