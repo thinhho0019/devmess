@@ -93,13 +93,9 @@ jobs:
           name: frontend-dist
           path: dist
 
-      # - name: Download backend artifact
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: backend-app
-      #     path: app
-
-      # Copy everything needed to server
+      - name: List downloaded artifact
+        run: ls -R dist        
+  
       - name: Copy files via SSH
         uses: appleboy/scp-action@v0.1.7
         with:
