@@ -133,3 +133,55 @@ jobs:
             docker compose up -d --build
 
             echo "✅ Deployment complete!"
+      - name: Setup Nginx & Serve Web
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            echo "🚀 Checking Nginx installation..."
+            if ! command -v nginx &> /dev/null; then
+              sudo apt update -y
+              sudo apt install -y nginx
+            fi
+
+            echo "🔧 Configuring Nginx reverse proxy..."
+            # Tạo file cấu hình tạm thời
+            cat << 'EOF' | sudo tee /etc/nginx/sites-available/devmess
+            server {
+                listen 80;
+                server_name _;
+
+                root /var/www/devmess/dist;
+                index index.html;
+
+                location / {
+                    try_files $uri /index.html;
+                }
+
+                # Proxy API (Go backend)
+                location /api/ {
+                    proxy_pass http://127.0.0.1:8080/;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+            }
+            EOF
+
+            # Kích hoạt site
+            sudo ln -sf /etc/nginx/sites-available/devmess /etc/nginx/sites-enabled/devmess
+
+            # Xóa site default nếu muốn
+            sudo rm -f /etc/nginx/sites-enabled/default
+
+            echo "🔄 Testing Nginx configuration..."
+            sudo nginx -t
+
+            echo "♻️ Restarting Nginx..."
+            sudo systemctl restart nginx
+            sudo systemctl enable nginx
+
+            echo "✅ Nginx setup complete! Web should be live at port 80."
