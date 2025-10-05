@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FaSearch } from "react-icons/fa";
 import { FiEdit, FiMoreHorizontal, FiSend } from "react-icons/fi";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import imgAvatar from "../assets/img.jpg";
 import { Avatar } from "../components/avatar";
-import { ChatView } from "../components/chat";
+import { ChatView, type Chat } from "../components/chat";
+import { useIsMobile } from "../hooks";
 
 interface ChatMessage {
   id: number;
@@ -14,31 +15,38 @@ interface ChatMessage {
   online: boolean;
 }
 
+
+interface ChatMessage {
+  id: number;
+  name: string;
+  lastMessage: string;
+  time: string;
+  online: boolean;
+  messages: Chat[];
+}
+
 const chats: ChatMessage[] = [
-  { id: 1, name: "Alice", lastMessage: "Hey, how are you?", time: "10:30 AM", online: true },
-  { id: 2, name: "Bob", lastMessage: "Let's catch up later.", time: "9:45 AM", online: false },
-  { id: 3, name: "Project Team", lastMessage: "Meeting at 2 PM.", time: "Yesterday", online: true },
-  { id: 4, name: "Family Group", lastMessage: "Dinner tonight?", time: "Yesterday", online: true },
-  { id: 5, name: "John Doe", lastMessage: "Can you send me the file?", time: "Sep 18", online: false },
-  { id: 6, name: "Sarah", lastMessage: "See you tomorrow!", time: "Sep 17", online: true },
-  { id: 7, name: "Chris", lastMessage: "Check this out!", time: "Sep 16", online: false },
-  { id: 8, name: "Design Team", lastMessage: "New mockups available.", time: "Sep 15", online: true },
+  {
+    id: 1,
+    name: "Thịnh hồ",
+    lastMessage: "Hey, how are you?",
+    time: "10:30 AM",
+    online: true,
+    messages: [
+      {
+        id: "msg_1",
+        message: "Hey, how are you?",
+        created_at: "2025-10-05T10:30:00Z",
+        user_id: "user_alice",
+        type: "text",
+        status: "read",
+        is_edited: false,
+        is_deleted: false
+
+      }],
+    }
 ];
 
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  return isMobile;
-};
 
 export default function HomeChat() {
   const [selected, setSelected] = useState<ChatMessage | null>(chats[0]);
@@ -119,11 +127,10 @@ export default function HomeChat() {
               <div
                 key={chat.id}
                 onClick={() => setSelected(chat)}
-                className={`flex items-center gap-3 p-3 cursor-pointer rounded-xl transition-colors duration-200 ${
-                  selected?.id === chat.id
-                    ? "bg-blue-500 text-white"
-                    : "hover:bg-gray-200 dark:hover:bg-gray-800"
-                }`}
+                className={`flex items-center gap-3 p-3 cursor-pointer rounded-xl transition-colors duration-200 ${selected?.id === chat.id
+                  ? "bg-blue-500 text-white"
+                  : "hover:bg-gray-200 dark:hover:bg-gray-800"
+                  }`}
               >
                 <Avatar src={imgAvatar} size="lg" online={chat.online} />
                 <div className="flex-1 min-w-0">
@@ -146,7 +153,7 @@ export default function HomeChat() {
         <PanelResizeHandle className="w-1 bg-gray-200 dark:bg-gray-800 hover:bg-blue-500 transition-colors" />
         <Panel minSize={30}>
           {selected ? (
-            <ChatView id={selected.id.toString()} name={selected.name} />
+            <ChatView id={selected.id.toString()} name={selected.name} chats={selected.messages} />
           ) : (
             <div className="flex-col items-center justify-center h-full text-center bg-gray-100 dark:bg-gray-900 hidden md:flex">
               <div className="p-6 bg-white dark:bg-gray-800 rounded-full">

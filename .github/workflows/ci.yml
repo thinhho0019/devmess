@@ -77,7 +77,7 @@ jobs:
         with:
           name: backend-binary
           path: server/app
-  # ---------- DEPLOY ----------
+    # ---------- DEPLOY ----------
   deploy:
     name: Deploy to Server
     runs-on: ubuntu-latest
@@ -87,101 +87,98 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Download server artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-binary
+          path: . # Tải file 'app' vào thư mục gốc của runner
+
       - name: Download frontend artifact
         uses: actions/download-artifact@v4
         with:
           name: frontend-dist
           path: dist
 
-      - name: List downloaded artifact
-        run: ls -R dist        
-  
       - name: Copy files via SSH
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: dist/*,docker-compose.yaml
+          source: "dist,app" # Sao chép thư mục 'dist' và file 'app'
           target: /var/www/devmess
+          strip_components: 1 # Loại bỏ thư mục 'dist' cha, chỉ sao chép nội dung bên trong
 
-      # SSH vào server để setup & run docker compose
-      - name: Deploy using Docker Compose
+      # SSH vào server để setup & run
+      - name: Deploy Backend & Setup Nginx
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            echo "🚀 Checking Docker installation..."
-            if ! command -v docker &> /dev/null; then
-              sudo apt update -y
-              sudo apt install -y ca-certificates curl gnupg lsb-release
-              sudo mkdir -p /etc/apt/keyrings
-              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-              echo \
-                "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-                https://download.docker.com/linux/ubuntu \
-                $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-              sudo apt update -y
-              sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-            fi
-
+            # --- 1. Setup Backend ---
             cd /var/www/devmess
-            echo "🧩 Pulling new Docker setup..."
-            docker compose down
-            docker compose up -d --build
+            echo "🔑 Granting execute permission to Go binary..."
+            chmod +x app
 
-            echo "✅ Deployment complete!"
-      - name: Setup Nginx & Serve Web
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
+            echo "⚙️ Creating systemd service for backend..."
+            cat << 'EOF' | sudo tee /etc/systemd/system/devmess-backend.service
+            [Unit]
+            Description=Go Backend for Devmess
+            After=network.target
+
+            [Service]
+            User=root
+            WorkingDirectory=/var/www/devmess
+            ExecStart=/var/www/devmess/app
+            Restart=always
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+
+            echo "🔄 Reloading systemd and starting backend service..."
+            sudo systemctl daemon-reload
+            sudo systemctl enable devmess-backend.service
+            sudo systemctl restart devmess-backend.service
+            echo "✅ Backend is now running via systemd!"
+
+            # --- 2. Setup Nginx for Frontend ---
             echo "🚀 Checking Nginx installation..."
             if ! command -v nginx &> /dev/null; then
-              sudo apt update -y
-              sudo apt install -y nginx
+              sudo apt update -y && sudo apt install -y nginx
             fi
 
             echo "🔧 Configuring Nginx reverse proxy..."
-            # Tạo file cấu hình tạm thời
             cat << 'EOF' | sudo tee /etc/nginx/sites-available/devmess
             server {
                 listen 80;
-                server_name devmess.cloud www.devmess.cloud;
+                server_name devmess.cloud www.devmess.cloud; # Thay bằng domain của bạn
 
-                root /var/www/devmess/dist;
+                # Serve frontend files
+                root /var/www/devmess;
                 index index.html;
 
                 location / {
                     try_files $uri /index.html;
                 }
 
-                # Proxy API (Go backend)
-                location /api/ {
-                    proxy_pass http://127.0.0.1:8080/;
+                # Proxy WebSocket connections
+                location /ws {
+                    proxy_pass http://127.0.0.1:8080; # Go backend address
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "Upgrade";
                     proxy_set_header Host $host;
-                    proxy_set_header X-Real-IP $remote_addr;
-                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto $scheme;
                 }
             }
             EOF
 
-            # Kích hoạt site
-            sudo ln -sf /etc/nginx/sites-available/devmess /etc/nginx/sites-enabled/devmess
-
-            # Xóa site default nếu muốn
+            sudo ln -sf /etc/nginx/sites-available/devmess /etc/nginx/sites-enabled/
             sudo rm -f /etc/nginx/sites-enabled/default
-
-            echo "🔄 Testing Nginx configuration..."
+            
+            echo "🔄 Testing and restarting Nginx..."
             sudo nginx -t
-
-            echo "♻️ Restarting Nginx..."
             sudo systemctl restart nginx
-            sudo systemctl enable nginx
-
-            echo "✅ Nginx setup complete! Web should be live at port 80."
+            echo "✅ Nginx setup complete!"

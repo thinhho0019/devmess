@@ -18,7 +18,7 @@ export const EmojiPopup: React.FC<EmojiPopupProps> = ({ show, position, emojis, 
                     initial={{ opacity: 0, scale: 0.8, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    transition={{ duration: 0.10, ease: "easeOut" }}
                     style={{
                         position: "fixed",
                         top: position.top,
@@ -33,7 +33,7 @@ export const EmojiPopup: React.FC<EmojiPopupProps> = ({ show, position, emojis, 
                             key={idx}
                             whileHover={{ scale: 1.7, rotate: 15 }}
                             whileTap={{ scale: 1.4 }}
-                            transition={{ duration: 0.08, ease: "easeOut" }}
+                            transition={{ duration: 0.02, ease: "easeOut" }}
                             onMouseDown={(e) => {
                                 e.stopPropagation();
                                 onSelect(emoji);
