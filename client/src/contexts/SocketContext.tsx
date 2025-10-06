@@ -1,6 +1,6 @@
 // src/contexts/SocketContext.tsx
 import React, { createContext, useContext, useEffect, useState, type ReactNode, useRef, useCallback } from 'react';
-import WebSocketService, { wsUrlLocal } from '../services/websocketService';
+import WebSocketService, { wsUrl } from '../services/websocketService';
 
 type SocketContextType = {
     readyState: number;
@@ -30,7 +30,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
     useEffect(() => {
         // Create a new instance for each SocketProvider
-        const ws = new WebSocketService(wsUrlLocal);
+        const ws = new WebSocketService(wsUrl);
         webSocketService.current = ws;
 
         const handleOpen = () => setReadyState(ws.getReadyState());

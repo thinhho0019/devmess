@@ -82,7 +82,7 @@ class WebSocketService {
 }
 
 const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:8080/ws";
-const wsUrlLocal = "ws://192.168.100.249:8080/ws";
+// const wsUrlLocal = "ws://192.168.100.249:8080/ws";
 
-export { wsUrl, wsUrlLocal };
+export { wsUrl };
 export default WebSocketService;
