@@ -37,7 +37,9 @@ jobs:
         run: npm test -- --watchAll=false
 
       - name: Create .env file for production
-        run: echo "VITE_WS_URL=ws://devmess.cloud/ws" > .env
+        env:
+          VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
+        run: echo "VITE_WS_URL=${VITE_WS_URL}" > .env
 
       - name: Build Vite project
         run: npm run build
