@@ -57,7 +57,7 @@ export default function HomePage() {
         <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-8">
           {t('hero_subtitle')}
         </p>
-        <Link to="/chat">
+        <Link to="/t">
           <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition duration-300 inline-flex items-center">
             {t('start_chatting')} <FiArrowRight className="ml-2" />
           </button>

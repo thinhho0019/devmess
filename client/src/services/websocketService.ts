@@ -15,7 +15,7 @@ class WebSocketService {
     constructor(url: string) {
         this.url = url;
     }
-
+    
     public connect() {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             console.log("WebSocket is already connected.");

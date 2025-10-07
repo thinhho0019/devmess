@@ -9,7 +9,6 @@ export const useChatManager = (initialChats: Chat[], currentUserId: string) => {
     const [messages, setMessages] = useState<Chat[]>(initialChats);
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const { lastMessage, sendMessage: sendSocketMessage } = useSocket();
-
     // Listen for incoming messages from WebSocket
     useEffect(() => {
         if (lastMessage !== null) {

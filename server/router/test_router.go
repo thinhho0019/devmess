@@ -2,13 +2,15 @@ package router
 
 import (
 	"project/handler"
+	"project/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
 func TestRouter(r *gin.Engine) {
-	test := r.Group("/api")
+	protected := r.Group("/api", middleware.VerifyAccessToken)
 	{
-		test.GET("/", handler.TestHandle)
+		protected.GET("/", handler.TestHandle)
 	}
+
 }
