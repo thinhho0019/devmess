@@ -7,10 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AuthRouter(r *gin.Engine) {
+func ImageRouter(r *gin.Engine) {
 	protected := r.Group("/api", middleware.VerifyAccessToken)
 	{
-		protected.GET("/auth-me", handler.AuthHandle)
+		protected.GET("/images/:filename", handler.ServeImage)
 	}
-
 }

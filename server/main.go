@@ -26,6 +26,7 @@ func main() {
 		os.Getenv("GOOGLE_REDIRECT_URL"),
 	)
 	database.ConnectDB()
+	database.InitRedis()
 	hub := websocket.NewHub()
 	go hub.Run()
 	// Khởi tạo Gin router
@@ -38,4 +39,5 @@ func main() {
 		port = "8080"
 	}
 	r.Run(":" + port)
+	defer database.CloseRedis()
 }

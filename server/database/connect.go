@@ -76,3 +76,4 @@ func CreateDBIfNotExists() {
 func isDuplicateDatabaseError(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "already exists")
 }
+ 

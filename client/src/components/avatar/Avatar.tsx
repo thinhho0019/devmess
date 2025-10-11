@@ -26,7 +26,7 @@ const Avatar: React.FC<AvatarProps> = ({
       />
       {online && (
         <span
-          className={`absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 border-2 border-white dark:border-gray-900`}
+          className={`absolute bottom-1 right-1 block h-3 w-3 rounded-full bg-green-500 border-2 border-white dark:border-gray-900`}
         />
       )}
     </div>

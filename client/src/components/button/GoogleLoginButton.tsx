@@ -4,7 +4,7 @@ interface Props {
   onLogin: (token: string) => void;
 }
 
-const GoogleLoginButton: React.FC<Props> = ({ onLogin }) => {
+const GoogleLoginButton: React.FC<Props> = () => {
   const handleGoogleLogin = () => {
     const redirectUri = encodeURIComponent(window.location.origin + "/auth/callback");
     window.location.href = `http://localhost:8080/api/auth/google?redirect_uri=${redirectUri}`;

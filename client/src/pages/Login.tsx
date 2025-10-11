@@ -1,17 +1,39 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { LogIn } from "lucide-react";
 import GoogleLoginButton from "../components/button/GoogleLoginButton";
+import { loginUser } from "../services";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  
+  const [notify, setNotify] = useState("");
+  const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login with", email, password);
-    // Gọi API: POST /api/login
+    setNotify("");
+
+    try {
+      const data = await loginUser(email,  password);
+      const { access_token } = data;
+
+      if (access_token) {
+        localStorage.setItem("access_token", access_token);
+        navigate(`/auth/success?token=${access_token}`);
+      } else {
+        setNotify("Đăng nhập thành công nhưng không nhận được token.");
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        setNotify(error.message);
+      } else {
+        setNotify("Đã xảy ra lỗi không xác định. Vui lòng thử lại.");
+      }
+      console.error("Login failed:", error);
+    }
   };
 
   return (
@@ -87,8 +109,11 @@ const Login: React.FC = () => {
               className="w-full border border-gray-700 bg-gray-800 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition text-white placeholder-gray-400"
               required
             />
+            <div className="relative w-full mt-2 px-2 py-2 text-red-500 font-medium z-50 h-6">
+              {notify}
+            </div>
           </div>
-
+          
           <motion.button
             whileTap={{ scale: 0.97 }}
             whileHover={{ scale: 1.03 }}
@@ -108,7 +133,7 @@ const Login: React.FC = () => {
         <p className="text-center text-sm text-gray-400 mt-6">
           Chưa có tài khoản?{" "}
           <Link
-            to="/signup"
+            to="/r"
             className="text-blue-400 font-medium hover:underline hover:text-blue-300 transition"
           >
             Đăng ký ngay

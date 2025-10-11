@@ -18,15 +18,14 @@ type Device struct {
 }
 
 type Token struct {
-	ID           uuid.UUID      `gorm:"type:uuid;primaryKey" json:"id"`
-	DeviceID     uuid.UUID      `gorm:"type:uuid;uniqueIndex" json:"device_id"` // 1 token chỉ cho 1 device
-	AccessToken  string         `gorm:"uniqueIndex;not null" json:"access_token"`
-	RefreshToken string         `gorm:"uniqueIndex;not null" json:"refresh_token"`
-	ExpiresAt    int64          `gorm:"not null" json:"expires_at"`
-	TokenType    string         `gorm:"type:varchar(50);not null;default:'Bearer'" json:"token_type"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
+	ID           uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+	DeviceID     uuid.UUID `gorm:"type:uuid;uniqueIndex" json:"device_id"` // 1 token chỉ cho 1 device
+	AccessToken  string    `gorm:"uniqueIndex;not null" json:"access_token"`
+	RefreshToken string    `gorm:"uniqueIndex;not null" json:"refresh_token"`
+	ExpiresAt    int64     `gorm:"not null" json:"expires_at"`
+	TokenType    string    `gorm:"type:varchar(50);not null;default:'Bearer'" json:"token_type"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 func (d *Device) BeforeCreate(tx *gorm.DB) (err error) {
