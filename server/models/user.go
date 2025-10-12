@@ -15,6 +15,8 @@ type User struct {
 	Password  string         `gorm:"type:varchar(255);not null" json:"-"`
 	Provider  string         `gorm:"type:varchar(50);not null;default:'local'" json:"provider"`
 	CreatedAt time.Time      `json:"created_at"`
+	Status    string         `gorm:"type:varchar(10);default:'offline'" json:"status"`
+	LastSeen  time.Time      `json:"last_seen"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	Devices   []Device       `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`

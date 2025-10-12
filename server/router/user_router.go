@@ -10,4 +10,6 @@ func UserRouter(r *gin.Engine) {
 	r.POST("api/check-email", handler.CheckEmailExist)
 	r.POST("api/login", handler.LoginPassword)
 	r.POST("api/register", handler.Register)
+	r.POST("api/forgot-password", handler.ForgotPassword)
+	r.POST("api/reset-password", handler.ResetPassword)
 }

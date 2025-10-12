@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaSearch } from "react-icons/fa";
+import {   FaSearch } from "react-icons/fa";
 import { FiEdit, FiMoreHorizontal, FiSend } from "react-icons/fi";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import imgAvatar from "../assets/img.jpg";
@@ -11,6 +11,9 @@ import LoadingFullScreen from "../components/loading/LoadingFullScreen";
 import { useImage } from "../hooks/api/useImage";
 import LoadingComponent from "../components/loading/LoadingComponent";
 import { SocketProvider } from "../contexts/SocketContext";
+import { PopupProfile } from "../components/modals/Profile";
+import { PopupFindFriends } from "../components/modals/FindFriends";
+import NotificationBell from "../components/notify/NotificationBell";
 
 interface ChatMessage {
   id: number;
@@ -55,10 +58,17 @@ const chats: ChatMessage[] = [
 
 export default function HomeChat() {
   const [selected, setSelected] = useState<ChatMessage | null>(chats[0]);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showAddFriend, setShowAddFriend] = useState(false);
   const isMobile = useIsMobile();
   const urlImage = localStorage.getItem("avatar")
-  const { loading, isAuthenticated } = useAuth(true);
+  const { user, loading, isAuthenticated } = useAuth(true);
   const { loadingImage, src } = useImage(urlImage || "");
+  const mockUsers = [
+    { name: "Alice Nguyen", email: "alice@gmail.com" },
+    { name: "Bob Tran", email: "bob@gmail.com" },
+    { name: "Thinh Ho", email: "thinh@example.com", added: true },
+  ];
   if (!isAuthenticated) {
     return;
   } else if (loading) {
@@ -66,19 +76,28 @@ export default function HomeChat() {
   }
   if (isMobile) {
     return (
+
       <SocketProvider>
+        <PopupFindFriends
+          show={showAddFriend}
+          onClose={() => setShowAddFriend(false)}
+          onAddFriend={() => { }}
+          friendsList={mockUsers}
+        />
+        <PopupProfile user={user ?? undefined} onAvatarChange={() => { }} show={showProfile} onClose={() => { setShowProfile(false); }}></PopupProfile>
         <div className="h-screen w-screen flex flex-col bg-gray-100 dark:bg-gray-900">
 
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-center justify-between mb-4">
-              <h1 className="text-xl font-bold text-gray-800 dark:text-white">Chats</h1>
+              <h1 className="text-xl font-bold text-gray-800 dark:text-white">{user?.name || "Chats"}</h1>
               <div className="flex items-center gap-2">
                 <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
                   <FaSearch className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
-                <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
-                  <FiEdit className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                <button onClick={() => setShowAddFriend(true)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                  <FiEdit  className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
+                <NotificationBell />
               </div>
             </div>
             <div className="flex space-x-4 overflow-x-auto pb-2 pt-1 -mx-4 px-4">
@@ -95,7 +114,7 @@ export default function HomeChat() {
           </div>
           <div className="flex-1 min-h-0">
             {selected ? (
-              <ChatView id={selected.id.toString()} name={selected.name} />
+              <ChatView id={selected.id.toString()} name={selected.name} is_mobile={isMobile} />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <FiSend className="w-16 h-16 text-gray-400" />
@@ -110,6 +129,13 @@ export default function HomeChat() {
 
   return (
     <SocketProvider>
+      <PopupFindFriends
+        show={showAddFriend}
+        onClose={() => setShowAddFriend(false)}
+        onAddFriend={() => { }}
+        friendsList={mockUsers}
+      />
+      <PopupProfile user={user ?? undefined} onAvatarChange={() => { }} show={showProfile} onClose={() => { setShowProfile(false); }}></PopupProfile>
       <div className="h-screen w-screen bg-gray-100 dark:bg-gray-900">
 
         <PanelGroup direction="horizontal" className="flex h-full w-full">
@@ -117,20 +143,21 @@ export default function HomeChat() {
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
               <div className="flex items-center gap-3">
 
-                <div className="relative rounded-full">
+                <div onClick={() => setShowProfile(true)} className="relative rounded-full">
                   {loadingImage && <LoadingComponent />}
                   <Avatar src={src || imgAvatar} size="md" online={false} />
                 </div>
 
-                <h1 className="text-xl font-bold text-gray-800 dark:text-white">Chats</h1>
+                <h1 className="text-xl font-bold text-gray-800 dark:text-white">{user?.name || "User"}</h1>
               </div>
               <div className="flex items-center gap-2">
                 <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
                   <FiMoreHorizontal className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
-                <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
-                  <FiEdit className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                <button onClick={() => setShowAddFriend(true)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                  <FiEdit   className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
+                <NotificationBell />
               </div>
             </div>
 

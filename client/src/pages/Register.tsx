@@ -1,23 +1,48 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { UserPlus, Eye, EyeOff } from "lucide-react";
+import { UserPlus, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
 import GoogleLoginButton from "../components/button/GoogleLoginButton";
 import { registerUser } from "../services";
+
+const PasswordRequirement: React.FC<{ isValid: boolean; text: string }> = ({ isValid, text }) => (
+    <div className={`flex items-center transition-colors duration-300 ${isValid ? 'text-green-400' : 'text-gray-500'}`}>
+        {isValid ? <CheckCircle2 size={16} className="mr-2 flex-shrink-0" /> : <XCircle size={16} className="mr-2 flex-shrink-0" />}
+        <span>{text}</span>
+    </div>
+);
 
 const Register: React.FC = () => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [passwordTouched, setPasswordTouched] = useState(false);
+    console.log("Password:", passwordTouched);
+    const [passwordValidation, setPasswordValidation] = useState({
+        length: false,
+        uppercase: false,
+    });
     const [confirmPassword, setConfirmPassword] = useState("");
     const [notify, setNotify] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const navigate = useNavigate();
 
+    useEffect(() => {
+        setPasswordValidation({
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+        });
+    }, [password]);
+
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setNotify("");
+
+        if (!passwordValidation.length || !passwordValidation.uppercase) {
+            setNotify("Mật khẩu không đáp ứng đủ yêu cầu.");
+            return;
+        }
 
         if (password !== confirmPassword) {
             setNotify("Mật khẩu nhập lại không khớp.");
@@ -25,18 +50,14 @@ const Register: React.FC = () => {
         }
 
         try {
-            // Giả sử API trả về token sau khi đăng ký thành công
-            // Cần cập nhật interface trong `auth.ts` nếu cần
-            // check email đã tồn tại
             const data = await registerUser(name, email, password) as { access_token?: string, message: string };
 
             if (data.access_token) {
                 localStorage.setItem("access_token", data.access_token);
                 navigate(`/auth/success?token=${data.access_token}`);
             } else {
-                // Nếu API chỉ trả về tin nhắn thành công mà không có token
                 setNotify(data.message || "Đăng ký thành công! Vui lòng đăng nhập.");
-                setTimeout(() => navigate("/login"), 2000); // Chuyển hướng sau 2s
+                setTimeout(() => navigate("/login"), 2000);
             }
         } catch (error) {
             if (error instanceof Error) {
@@ -49,7 +70,7 @@ const Register: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-950 to-black relative overflow-hidden text-gray-100">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-950 to-black relative overflow-hidden text-gray-100 py-8">
             {/* Hiệu ứng nền */}
             <motion.div
                 className="absolute w-[28rem] h-[28rem] bg-purple-500/20 rounded-full blur-3xl"
@@ -69,7 +90,7 @@ const Register: React.FC = () => {
                 transition={{ duration: 0.6, ease: "easeOut" }}
                 className="relative z-10 bg-gray-900/70 backdrop-blur-xl border border-gray-700/40 shadow-2xl rounded-2xl p-8 w-full max-w-md"
             >
-                <div className="text-center mb-8">
+                <div className="text-center mb-6">
                     <div className="flex justify-center mb-3">
                         <motion.div whileHover={{ rotate: 10 }} transition={{ type: "spring", stiffness: 300 }}>
                             <UserPlus className="w-10 h-10 text-blue-400" />
@@ -83,7 +104,7 @@ const Register: React.FC = () => {
                     </p>
                 </div>
 
-                <form onSubmit={handleRegister} className="space-y-4">
+                <form onSubmit={handleRegister} className="space-y-3">
                     <div>
                         <label className="block text-sm font-semibold text-gray-300 mb-1">Tên của bạn</label>
                         <input
@@ -114,6 +135,7 @@ const Register: React.FC = () => {
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            onFocus={() => setPasswordTouched(true)}
                             className="w-full border border-gray-700 bg-gray-800 rounded-lg p-3 pr-10 focus:ring-2 focus:ring-blue-500 focus:outline-none transition text-white placeholder-gray-400"
                             required
                         />
@@ -121,6 +143,9 @@ const Register: React.FC = () => {
                             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
                     </div>
+
+
+
                     <div className="relative">
                         <label className="block text-sm font-semibold text-gray-300 mb-1">Nhập lại mật khẩu</label>
                         <input
@@ -135,6 +160,12 @@ const Register: React.FC = () => {
                             {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
                     </div>
+                    {(
+                        <div className="text-sm space-y-1 pl-1">
+                            <PasswordRequirement isValid={passwordValidation.length} text="Ít nhất 8 ký tự" />
+                            <PasswordRequirement isValid={passwordValidation.uppercase} text="Chứa ít nhất một ký tự viết hoa" />
+                        </div>
+                    )}
 
                     {notify && (<div className="w-full text-center py-1 text-red-400 font-medium h-6">
                         {notify}
@@ -144,7 +175,7 @@ const Register: React.FC = () => {
                         whileTap={{ scale: 0.97 }}
                         whileHover={{ scale: 1.03 }}
                         type="submit"
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-3 rounded-lg font-semibold shadow-lg transition-all"
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-3 rounded-lg font-semibold shadow-lg transition-all !mt-5"
                     >
                         Đăng ký
                     </motion.button>
@@ -156,7 +187,7 @@ const Register: React.FC = () => {
 
                 <p className="text-center text-sm text-gray-400 mt-6">
                     Đã có tài khoản?{" "}
-                    <Link to="/login" className="text-blue-400 font-medium hover:underline hover:text-blue-300 transition">
+                    <Link to="/l" className="text-blue-400 font-medium hover:underline hover:text-blue-300 transition">
                         Đăng nhập ngay
                     </Link>
                 </p>

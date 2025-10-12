@@ -2,18 +2,18 @@ package repository
 
 import (
 	"errors"
-	"project/database"
-	"project/models"
-
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+	"project/database"
+	"project/models"
 )
 
 type UserRepository interface {
 	CreateUser(user *models.User) (*models.User, error)
-	GetUserByID(id uint) (*models.User, error)
+	GetUserByID(id uuid.UUID) (*models.User, error)
 	GetUserByEmail(email string) (*models.User, error)
-	LoginPassword(email string, password string) (*models.User, error)
+	LoginPassword(email string, password string, provider string) (*models.User, error)
 	UpdateUser(user *models.User) error
 	DeleteUser(id uint) error
 	GetAllUsers() ([]models.User, error)
@@ -37,10 +37,14 @@ func (r *userRepo) CreateUser(user *models.User) (*models.User, error) {
 	return user, nil
 }
 
-func (r *userRepo) LoginPassword(email string, password string) (*models.User, error) {
+func (r *userRepo) LoginPassword(email string, password string, provider string) (*models.User, error) {
 	var user models.User
 	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, errors.New("invalid email or password")
+	}
+
+	if user.Provider != provider {
+		return nil, errors.New("please login with " + user.Provider)
 	}
 	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)) != nil {
 		return nil, errors.New("invalid email or password")
@@ -50,7 +54,7 @@ func (r *userRepo) LoginPassword(email string, password string) (*models.User, e
 }
 
 // 🔍 Find user by ID
-func (r *userRepo) GetUserByID(id uint) (*models.User, error) {
+func (r *userRepo) GetUserByID(id uuid.UUID) (*models.User, error) {
 	var user models.User
 	if err := r.db.First(&user, id).Error; err != nil {
 		return nil, err

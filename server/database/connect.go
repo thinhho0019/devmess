@@ -36,7 +36,14 @@ func ConnectDB() {
 	}
 
 	// 3️⃣ Auto migrate
-	err = db.AutoMigrate(&models.User{}, &models.Token{}, &models.Device{})
+	err = db.AutoMigrate(
+		&models.User{}, 
+		&models.Token{}, 
+		&models.Device{},
+		&models.Message{},
+		&models.Conversation{},
+		&models.ConversationMember{},
+		)
 	if err != nil {
 		log.Fatalf("❌ Lỗi auto migrate: %v", err)
 	}
@@ -76,4 +83,3 @@ func CreateDBIfNotExists() {
 func isDuplicateDatabaseError(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "already exists")
 }
- 

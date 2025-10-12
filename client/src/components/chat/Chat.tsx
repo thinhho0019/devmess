@@ -23,11 +23,12 @@ const ChatView: React.FC<ChatProps> = ({
     name = "thinhho",
     img = "",
     chats = [],
+    is_mobile = false,
     current_user_id = ramdomUserId // Example current user
 }) => {
     const { messages, chatContainerRef, sendMessage, addReaction } = useChatManager(chats, current_user_id);
     const { showEmojiPopup, popupPosition, selectedMessageId, messageRefs, openEmojiPopup, closeEmojiPopup } = useEmojiManager();
-     
+
     const handleEmojiSelect = (emoji: EmojiData) => {
         if (selectedMessageId) {
             addReaction(selectedMessageId, emoji);
@@ -41,9 +42,50 @@ const ChatView: React.FC<ChatProps> = ({
             className="p-2 h-full grid"
             style={{ gridTemplateRows: "10% 80% 10%" }}
         >
-            <div className="">
-                <h3 className="font-semibold text-white">{name}</h3>
-                {img && <img src={img} alt={name} className="w-10 h-10 rounded-full" />}
+            <div className="flex items-center justify-between px-4 py-2 bg-gradient-to-r from-gray-900/60 to-gray-800/60 backdrop-blur-lg border-b border-white/10 rounded-xl mb-2 shadow-sm">
+                <div className="flex items-center gap-3">
+                    <div className="relative">
+                        <img
+                            src={img || "https://ui-avatars.com/api/?name=" + name}
+                            alt={name}
+                            className="w-10 h-10 rounded-full border border-gray-700 shadow-md object-cover"
+                        />
+                        {/* Online indicator */}
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-gray-900 rounded-full"></span>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-white text-sm sm:text-base flex items-center gap-1">
+                            {name}
+                            <span className="text-xs text-gray-400 font-normal">• online</span>
+                        </h3>
+                        {!is_mobile && (
+                            <p className="text-xs text-gray-400">Chat securely with {name}</p>)}
+            
+                    </div>
+                </div>
+
+                {/* Right-side action buttons (optional) */}
+                <div className="flex items-center gap-3">
+                    <button
+                        className="p-2 rounded-lg hover:bg-gray-700/40 transition"
+                        title="Voice Call"
+                    >
+                        📞
+                    </button>
+                    <button
+                        className="p-2 rounded-lg hover:bg-gray-700/40 transition"
+                        title="Video Call"
+                    >
+                        🎥
+                    </button>
+                    <button
+                        className="p-2 rounded-lg hover:bg-gray-700/40 transition"
+                        title="More Options"
+                    >
+                        ⋮
+                    </button>
+                </div>
             </div>
             <div ref={chatContainerRef} className="w-full overflow-y-auto chat-scroll">
                 <div className="h-full flex-col max-w-4xl mx-auto px-6 py-4 shadow space-y-1">

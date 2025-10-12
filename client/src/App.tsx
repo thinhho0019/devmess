@@ -8,6 +8,9 @@ import Login from "./pages/Login";
 import AuthSuccess from "./pages/AuthSuccess";
 import Register from "./pages/Register";
 
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPasswordConfirm from "./pages/ResetPassword";
+
 
 function App() {
 
@@ -20,6 +23,8 @@ function App() {
         <Route path="/r" element={<Register />} />
         <Route path="/about" element={<About />} />
         <Route path="/auth/success" element={<AuthSuccess />} />
+        <Route path="/reset-password" element={<ResetPasswordConfirm />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/*" element={<NotFound />} />
       </Routes>
     </>

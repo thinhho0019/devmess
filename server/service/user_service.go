@@ -56,9 +56,10 @@ func (s *UserService) CheckEmail(email string) (bool, error) {
 	return user != nil, nil
 }
 func (s *UserService) LoginPassword(email string, password string) (*models.User, error) {
-	user, err := s.repo.LoginPassword(email, password)
-	if user.Provider != "local" {
-		return nil, errors.New("please login with " + user.Provider)
+	fmt.Println(email, password)
+	user, err := s.repo.LoginPassword(email, password, "local")
+	if user == nil {
+		return nil, err
 	}
 	if err != nil {
 		return nil, err

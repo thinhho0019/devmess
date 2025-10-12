@@ -4,7 +4,7 @@ interface LoginResponse {
   access_token?: string;
   message?: string;
   error?: string;
-  
+
 }
 
 export const loginUser = async (email: string, password: string): Promise<LoginResponse> => {
@@ -78,3 +78,31 @@ export const checkEmailExists = async (email: string): Promise<boolean> => {
 
   return true;
 };
+export async function sendResetPassword(email: string) {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "Không thể gửi mail reset");
+  }
+  return await res.json();
+}// src/services/index.ts
+export async function confirmResetPassword(token: string, password: string) {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, password }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    console.log(data);
+    throw new Error(data.error || "Không thể đặt lại mật khẩu");
+  }
+
+  return res.json();
+}

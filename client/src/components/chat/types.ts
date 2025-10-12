@@ -127,7 +127,7 @@ export interface ChatProps {
   id: string; // Required - conversation ID
   name?: string; // Chat room/conversation name
   description?: string; // Chat description
-  
+  is_mobile?: boolean; // Mobile view
   // Visual
   img?: string; // Chat avatar/cover image
   alt?: string; // Alt text for image

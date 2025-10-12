@@ -25,7 +25,8 @@ func getJWTSecret() string {
 
 // CustomClaims chứa dữ liệu của token (payload) và thời gian hết hạn.
 type CustomClaims struct {
-	UserID uuid.UUID `json:"user_id"`
+	UserID     uuid.UUID `json:"user_id"`
+	AuthMethod string    `json:"auth_method,omitempty"` // "local", "google", "reset"
 	jwt.RegisteredClaims
 }
 
@@ -134,4 +135,43 @@ func ValidateToken(tokenString string) (*CustomClaims, error) {
 	}
 
 	return nil, errors.New("invalid token")
+}
+
+func GenerateResetToken(userID uuid.UUID) (string, error) {
+	duration := time.Hour // 1 hour
+	claims := &CustomClaims{
+		UserID:     userID,
+		AuthMethod: "reset",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "web_chat_app_reset",
+			ID:        uuid.New().String(),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtSecretKey)
+}
+
+// ValidateResetToken xác thực reset token và trả về claims
+func ValidateResetToken(tokenString string) (*CustomClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return jwtSecretKey, nil
+	})
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, errors.New("reset token has expired")
+		}
+		return nil, errors.New("invalid reset token")
+	}
+	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
+		if claims.Issuer != "web_chat_app_reset" {
+			return nil, errors.New("invalid reset token issuer")
+		}
+		return claims, nil
+	}
+	return nil, errors.New("invalid reset token")
 }

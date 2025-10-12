@@ -2,6 +2,7 @@ package router
 
 import (
 	"project/handler"
+	"project/middleware"
 	"project/websocket"
 
 	"github.com/gin-contrib/cors"
@@ -19,7 +20,7 @@ func SetupRouter(hub *websocket.Hub) *gin.Engine {
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
-
+	r.Use(middleware.RateLimitMiddleware())
 	// Thêm route cho WebSocket
 	r.GET("/ws", func(c *gin.Context) {
 		handler.ServeWs(hub, c.Writer, c.Request)

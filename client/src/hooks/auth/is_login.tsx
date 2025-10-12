@@ -32,6 +32,7 @@ export function useAuth(requireAuth = false) {
                 if (!response.ok) throw new Error("Unauthorized");
 
                 const data: UserResponse = await response.json();
+                console.log("✅ Auth check successful:", data);
                 setUser(data);
             } catch (err) {
                 console.error("❌ Auth check failed:", err);

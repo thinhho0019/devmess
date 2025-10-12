@@ -1,10 +1,13 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"project/models"
 	"project/repository"
 	"project/service"
+	"project/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,6 +23,14 @@ type RegisterRequest struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+type ResetPasswordRequest struct {
+	Token    string `json:"token" binding:"required"`
+	Password string `json:"password" binding:"required,min=6"`
 }
 
 func AuthHandle(c *gin.Context) {
@@ -159,4 +170,81 @@ func CheckEmailExist(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"message": "email not exist"})
 		return
 	}
+}
+
+// ForgotPassword: tạo reset token và gửi link (không tiết lộ email tồn tại)
+func ForgotPassword(c *gin.Context) {
+	var req ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userRepo := repository.NewUserRepository()
+	user, err := userRepo.GetUserByEmail(req.Email)
+	if user != nil && user.Provider != "local" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "This email is registered via " + user.Provider})
+		return
+	}
+	if err != nil || user == nil {
+		c.JSON(http.StatusOK, gin.H{"message": "If the email exists, a reset link was sent"})
+		return
+	}
+
+	// Tạo reset token
+	token, err := utils.GenerateResetToken(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create reset token"})
+		return
+	}
+
+	// Build reset link -> frontend sẽ có route nhận token
+	frontendURL := os.Getenv("DEFAULT_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
+	resetLink := fmt.Sprintf("%s/reset-password?token=%s", frontendURL, token)
+
+	// Gửi email (placeholder)
+	_ = utils.SendResetEmail(user.Email, resetLink)
+
+	c.JSON(http.StatusOK, gin.H{"message": "If the email exists, a reset link was sent"})
+}
+
+// ResetPassword: verify token và cập nhật mật khẩu
+func ResetPassword(c *gin.Context) {
+	var req ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	claims, err := utils.ValidateResetToken(req.Token)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userRepo := repository.NewUserRepository()
+	user, err := userRepo.GetUserByID(claims.UserID)
+	if err != nil || user == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Hash password
+	hashed, err := utils.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	// Cập nhật mật khẩu. Giả sử repo cung cấp UpdateUser hoặc UpdatePassword
+	user.Password = hashed
+	if err := userRepo.UpdateUser(user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password has been reset"})
 }

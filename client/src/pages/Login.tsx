@@ -109,9 +109,11 @@ const Login: React.FC = () => {
               className="w-full border border-gray-700 bg-gray-800 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition text-white placeholder-gray-400"
               required
             />
-            <div className="relative w-full mt-2 px-2 py-2 text-red-500 font-medium z-50 h-6">
-              {notify}
-            </div>
+            {notify && (
+              <div className="relative w-full mt-2 px-2 py-2 text-red-500 font-medium z-50 h-6">
+                {notify}
+              </div>
+            )}
           </div>
           
           <motion.button
@@ -129,6 +131,16 @@ const Login: React.FC = () => {
             onLogin={(token) => console.log("Google Token:", token)}
           />
         </div>
+
+        <p className="text-center text-sm text-gray-400 mt-6">
+          Quên mật khẩu?{" "}
+          <Link
+            to="/forgot-password"
+            className="text-blue-400 font-medium hover:underline hover:text-blue-300 transition"
+          >
+            Lấy lại
+          </Link>
+        </p>
 
         <p className="text-center text-sm text-gray-400 mt-6">
           Chưa có tài khoản?{" "}

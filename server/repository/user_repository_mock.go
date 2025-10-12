@@ -1,13 +1,17 @@
 package repository
 
-import "project/models"
-
 // MockUserRepository là struct mô phỏng UserRepository (dùng cho unit test)
+import (
+	"project/models"
+
+	"github.com/google/uuid"
+)
+
 type MockUserRepository struct {
 	MockCreateUser     func(user *models.User) (*models.User, error)
-	MockGetUserByID    func(id uint) (*models.User, error)
+	MockGetUserByID    func(id uuid.UUID) (*models.User, error)
 	MockGetUserByEmail func(email string) (*models.User, error)
-	MockLoginPassword  func(email string, password string) (*models.User, error)
+	MockLoginPassword  func(email string, password string, provider string) (*models.User, error)
 	MockUpdateUser     func(user *models.User) error
 	MockDeleteUser     func(id uint) error
 	MockGetAllUsers    func() ([]models.User, error)
@@ -22,14 +26,14 @@ func (m *MockUserRepository) CreateUser(user *models.User) (*models.User, error)
 	return nil, nil
 }
 
-func (m *MockUserRepository) LoginPassword(email string, password string) (*models.User, error) {
+func (m *MockUserRepository) LoginPassword(email string, password string, provider string) (*models.User, error) {
 	if m.MockLoginPassword != nil {
-		return m.MockLoginPassword(email, password)
+		return m.MockLoginPassword(email, password, provider)
 	}
 	return nil, nil
 }
 
-func (m *MockUserRepository) GetUserByID(id uint) (*models.User, error) {
+func (m *MockUserRepository) GetUserByID(id uuid.UUID) (*models.User, error) {
 	if m.MockGetUserByID != nil {
 		return m.MockGetUserByID(id)
 	}
