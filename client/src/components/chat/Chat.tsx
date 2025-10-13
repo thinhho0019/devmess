@@ -6,6 +6,7 @@ import { EmojiPopup } from "../emoji/emojiPopUp";
 import { useChatManager } from "../../hooks/chat/useChatManager";
 import { useEmojiManager } from "../../hooks/chat/useEmojiManager";
 import EmojiBox from "../emoji/emojiBox";
+import { Phone, Video, MoreHorizontal } from "lucide-react";
 
 const emojis: EmojiData[] = [
     { emoji: "😀", type: "smile", description: "Cười vui vẻ" },
@@ -61,59 +62,73 @@ const ChatView: React.FC<ChatProps> = ({
                         </h3>
                         {!is_mobile && (
                             <p className="text-xs text-gray-400">Chat securely with {name}</p>)}
-            
+
                     </div>
                 </div>
 
                 {/* Right-side action buttons (optional) */}
                 <div className="flex items-center gap-3">
                     <button
-                        className="p-2 rounded-lg hover:bg-gray-700/40 transition"
+                        className="p-2 rounded-lg hover:bg-gray-700/40 transition flex items-center justify-center"
                         title="Voice Call"
+                        aria-label="Voice Call"
                     >
-                        📞
+                        <Phone className="w-5 h-5 text-gray-200" />
                     </button>
                     <button
-                        className="p-2 rounded-lg hover:bg-gray-700/40 transition"
+                        className="p-2 rounded-lg hover:bg-gray-700/40 transition flex items-center justify-center"
                         title="Video Call"
+                        aria-label="Video Call"
                     >
-                        🎥
+                        <Video className="w-5 h-5 text-gray-200" />
                     </button>
                     <button
-                        className="p-2 rounded-lg hover:bg-gray-700/40 transition"
+                        className="p-2 rounded-lg hover:bg-gray-700/40 transition flex items-center justify-center"
                         title="More Options"
+                        aria-label="More Options"
                     >
-                        ⋮
+                        <MoreHorizontal className="w-5 h-5 text-gray-200" />
                     </button>
                 </div>
             </div>
             <div ref={chatContainerRef} className="w-full overflow-y-auto chat-scroll">
-                <div className="h-full flex-col max-w-4xl mx-auto px-6 py-4 shadow space-y-1">
-                    {messages.map((c) => {
+                <div className="h-full flex-col max-w-4xl mx-auto px-6 py-4  ">
+                    {messages.map((c, idx) => {
                         const isCurrentUser = c.user_id === current_user_id;
+                        const bubbleBase = "relative w-fit max-w-[520px] text-sm rounded-2xl px-4 py-3 shadow-lg cursor-pointer transform transition-all";
+                        // Muted/darker palettes for a calmer 'fantasy' look
+                        const bubbleClasses = isCurrentUser
+                            ? `${bubbleBase} bg-gradient-to-br from-slate-800 to-slate-700 text-gray-100 self-end ring-1 ring-black/20`
+                            : `${bubbleBase} bg-gradient-to-br from-indigo-900 to-indigo-800 text-gray-100 self-start ring-1 ring-black/20`;
+
                         return (
-                            <div key={c.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
-                                <div
-                                    ref={(el) => { messageRefs.current[c.id] = el; }}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        openEmojiPopup(c.id, isCurrentUser);
-                                    }}
-                                    className="relative w-fit max-w-[400px] text-sm bg-blue-500 pl-2 pt-2 pr-2 pb-0.2 rounded-xl cursor-pointer"
-                                >
-                                    <div className="text-[15px]">{c.message}</div>
-                                    <EmojiBox emojis={c.reactions} onSelect={(emoji) => addReaction(c.id, emoji)} />
-                                    <div className="flex justify-end items-center">
-                                        <span className="text-[10px] text-gray-200 mr-1">{convertTimeMessage(c.created_at, 7)}</span>
-                                        {isCurrentUser && (
-                                            <span className="text-[10px]">
-                                                {c.status === 'sending' && '🕒'}
-                                                {c.status === 'sent' && '✓'}
-                                                {c.status === 'delivered' && '✓✓'}
-                                                {c.status === 'read' && <span style={{ color: '#34B7F1' }}>✓✓</span>}
-                                                {c.status === 'failed' && '❌'}
-                                            </span>
-                                        )}
+                            <div key={c.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} py-1`}>
+                                <div className="relative">
+                                    <div
+                                        ref={(el) => { messageRefs.current[c.id] = el; }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            openEmojiPopup(c.id, isCurrentUser);
+                                        }}
+                                        className={bubbleClasses}
+                                    >
+                                        {/* tail removed as requested */}
+                                        <div className="text-[15px] leading-relaxed tracking-wide font-medium">{c.message}</div>
+                                        <div className="mt-2">
+                                            <EmojiBox emojis={c.reactions} onSelect={(emoji) => addReaction(c.id, emoji)} />
+                                        </div>
+                                        <div className="flex justify-end items-center mt-2 space-x-2">
+                                            <span className="text-[10px] text-white/70">{convertTimeMessage(c.created_at, 7)}</span>
+                                            {isCurrentUser && idx === messages.length - 1 && (
+                                                <span className="text-[10px] text-white/90">
+                                                    {c.status === 'sending' && '🕒'}
+                                                    {c.status === 'sent' && '✓'}
+                                                    {c.status === 'delivered' && '✓✓'}
+                                                    {c.status === 'read' && <span style={{ color: '#34B7F1' }}>✓✓</span>}
+                                                    {c.status === 'failed' && '❌'}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -130,10 +145,8 @@ const ChatView: React.FC<ChatProps> = ({
                     onSelect={handleEmojiSelect}
                 />
             )}
+            <ChatInput onSend={sendMessage} />
 
-            <div className="bg-blue-200 h-full">
-                <ChatInput onSend={sendMessage} />
-            </div>
         </div>
     );
 }

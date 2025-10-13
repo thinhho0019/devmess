@@ -8,7 +8,7 @@ import (
 )
 
 func AuthRouter(r *gin.Engine) {
-	protected := r.Group("/api", middleware.VerifyAccessToken)
+	protected := r.Group("/api/v1", middleware.VerifyAccessToken)
 	{
 		protected.GET("/auth-me", handler.AuthHandle)
 	}

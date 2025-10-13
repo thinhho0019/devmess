@@ -12,7 +12,7 @@ import (
 
 func ImageRouter(r *gin.Engine) {
 
-	protected := r.Group("/api", middleware.VerifyAccessToken)
+	protected := r.Group("/api/v1/", middleware.VerifyAccessToken)
 	{
 		spaces, err := storage.NewSpacesClient(
 			os.Getenv("SPACES_KEY"),
@@ -30,4 +30,6 @@ func ImageRouter(r *gin.Engine) {
 		protected.POST("/upload", fileHandler.Upload)
 		protected.GET("/files/:filename", fileHandler.GetFile)
 	}
+	// proxy to serve image
+	r.GET("/api/v1/protected", handler.ProtectShowImage)
 }

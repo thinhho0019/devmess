@@ -63,7 +63,7 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	 
 	// --- Khởi tạo repository và service ---
 	userRepo := repository.NewUserRepository()
 	userService := service.NewUserService(userRepo)
@@ -80,9 +80,6 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// --- Tạo người dùng mới ---
-	// Giả sử bạn có một phương thức `RegisterUser` trong `userService`
-	// để xử lý việc băm mật khẩu và tạo người dùng.
 	user, err := userService.RegisterUser(req.Name, req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user: " + err.Error()})

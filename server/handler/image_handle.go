@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"path/filepath"
+	"project/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,6 +24,33 @@ func ServeImage(c *gin.Context) {
 	// Bạn cần tạo thư mục "uploads" ở thư mục gốc của dự án.
 	imagePath := filepath.Join("uploads", filename)
 
+	// Phục vụ file. Gin sẽ tự động thiết lập Content-Type header phù hợp.
+	// Nếu file không tồn tại, c.File() sẽ tự động trả về lỗi 404 Not Found.
+	c.File(imagePath)
+}
+
+func ProtectShowImage(c *gin.Context) {
+	filename := c.Query("filename")
+	token := c.Query("token")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Token is required"})
+		return
+	}
+	if filename == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Image filename is required"})
+		return
+	}
+	// check token for user access
+	imagePath := filepath.Join("uploads", filename)
+	user, _, err := service.VerifyAccessToken(token)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify access token: " + err.Error()})
+		return
+	}
+	if user == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Access token expired or invalid"})
+		return
+	}
 	// Phục vụ file. Gin sẽ tự động thiết lập Content-Type header phù hợp.
 	// Nếu file không tồn tại, c.File() sẽ tự động trả về lỗi 404 Not Found.
 	c.File(imagePath)

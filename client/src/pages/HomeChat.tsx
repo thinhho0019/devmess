@@ -1,5 +1,5 @@
 import { useState } from "react";
-import {   FaSearch } from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
 import { FiEdit, FiMoreHorizontal, FiSend } from "react-icons/fi";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import imgAvatar from "../assets/img.jpg";
@@ -91,11 +91,11 @@ export default function HomeChat() {
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-xl font-bold text-gray-800 dark:text-white">{user?.name || "Chats"}</h1>
               <div className="flex items-center gap-2">
-                <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                <button onClick={() => setShowAddFriend(true)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
                   <FaSearch className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
-                <button onClick={() => setShowAddFriend(true)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
-                  <FiEdit  className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                  <FiEdit className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
                 <NotificationBell />
               </div>
@@ -155,7 +155,7 @@ export default function HomeChat() {
                   <FiMoreHorizontal className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
                 <button onClick={() => setShowAddFriend(true)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
-                  <FiEdit   className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <FiEdit className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
                 <NotificationBell />
               </div>

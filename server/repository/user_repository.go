@@ -2,11 +2,12 @@ package repository
 
 import (
 	"errors"
+	"project/database"
+	"project/models"
+
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-	"project/database"
-	"project/models"
 )
 
 type UserRepository interface {

@@ -30,5 +30,6 @@ func SetupRouter(hub *websocket.Hub) *gin.Engine {
 	AuthRouter(r)
 	UserRouter(r)
 	ImageRouter(r)
+	FriendshipRouter(r)
 	return r
 }

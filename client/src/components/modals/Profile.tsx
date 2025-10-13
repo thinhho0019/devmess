@@ -33,7 +33,7 @@ export const PopupProfile = ({ show, onClose, user, onAvatarChange }: {
             <div className="flex flex-col items-center gap-4">
               <div className="relative group">
                 <img
-                  src={user.avatar || "https://ui-avatars.com/api/?name=User&background=111827&color=fff"}
+                  src={user?.avatar || "https://ui-avatars.com/api/?name=User&background=111827&color=fff"}
                   alt="avatar"
                   className="w-28 h-28 rounded-full object-cover border-4 border-white/10 shadow-lg"
                 />
@@ -54,8 +54,8 @@ export const PopupProfile = ({ show, onClose, user, onAvatarChange }: {
 
               {/* Name & Gmail */}
               <div className="text-center space-y-1">
-                <h2 className="text-xl font-semibold">{user.name || "Unnamed User"}</h2>
-                <p className="text-gray-400">{user.email || "no-email@example.com"}</p>
+                <h2 className="text-xl font-semibold">{user?.name || "Unnamed User"}</h2>
+                <p className="text-gray-400">{user?.email || "no-email@example.com"}</p>
               </div>
 
               {/* Buttons */}

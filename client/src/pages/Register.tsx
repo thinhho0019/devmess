@@ -57,7 +57,7 @@ const Register: React.FC = () => {
                 navigate(`/auth/success?token=${data.access_token}`);
             } else {
                 setNotify(data.message || "Đăng ký thành công! Vui lòng đăng nhập.");
-                setTimeout(() => navigate("/login"), 2000);
+                setTimeout(() => navigate("/l"), 2000);
             }
         } catch (error) {
             if (error instanceof Error) {

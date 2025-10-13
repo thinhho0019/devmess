@@ -1,11 +1,10 @@
 package repository
 
 import (
-
 	"encoding/json"
-	"time"
 	"project/database"
 	"project/models"
+	"time"
 )
 
 type RedisRepository interface {

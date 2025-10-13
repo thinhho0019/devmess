@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"fmt"
-	"os"
 	"project/models"
 	"project/repository"
 	"project/utils"
@@ -14,7 +13,7 @@ type UserService struct {
 }
 
 func (s *UserService) RegisterUser(name string, email string, password string) (*models.User, error) {
-	// Validate input
+
 	if name == "" || email == "" || password == "" {
 		return nil, errors.New("all fields are required")
 	}
@@ -30,17 +29,16 @@ func (s *UserService) RegisterUser(name string, email string, password string) (
 		Name:     name,
 		Email:    email,
 		Password: hashedPassword,
-		Avatar:   fmt.Sprintf("%s/api/?name=%s", os.Getenv("DEFAULT_URL_SERVER"), "img.jpg"),
+		Avatar:   "img.jpg",
 		Provider: "local",
 	}
 
 	createdUser, err := s.repo.CreateUser(user)
 	if err != nil {
-		// Nếu có lỗi khi tạo người dùng, trả về lỗi đó.
+
 		return nil, err
 	}
 
-	// Nếu không có lỗi, trả về người dùng đã được tạo (có thể đã được cập nhật ID từ DB).
 	return createdUser, nil
 }
 

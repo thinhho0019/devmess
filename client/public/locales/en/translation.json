@@ -15,5 +15,18 @@
   "feature_modern_title": "Modern & Cross-Platform",
   "feature_modern_desc": "Enjoy a beautiful, intuitive interface on any device. Web, desktop, and mobile are always in sync.",
   "footer_copyright": "&copy; 2025 DevMess. All Rights Reserved.",
-  "footer_tagline": "Privacy, redefined."
+  "footer_tagline": "Privacy, redefined.",
+  "how_it_works": "How It Works",
+  "testimonials": "Testimonials",
+  "testimonials_title": "What Our Users Say",
+  "testimonials_subtitle": "Hear from our satisfied users about their experience with DevMess.",
+  "testimonial1_quote": "DevMess has completely transformed the way I communicate. The security features give me peace of mind, and the interface is so user-friendly!",
+  "testimonial1_name": "Jane Doe",
+  "testimonial2_quote": "I love how fast and reliable DevMess is. Whether I'm on my phone or computer, my messages are always in sync. Highly recommend it!",
+  "testimonial2_name": "John Smith",
+  "testimonial3_quote": "DevMess is the best messaging app I've ever used. The focus on privacy and security is unmatched.",
+  "testimonial3_name": "Alice Johnson",
+  "cta_title": "Ready to Experience Secure Messaging?",
+  "cta_subtitle": "Join thousands of users who trust DevMess for their private conversations.",
+  "cta_button": "Get Started Now"
 }

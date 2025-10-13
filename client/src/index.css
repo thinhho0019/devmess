@@ -5,7 +5,8 @@
   width: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Be Vietnam Pro', sans-serif;
+  /* Primary font that supports Vietnamese glyphs; fallbacks included */
+  font-family: 'Be Vietnam Pro', 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Noto Sans JP", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   /* nếu muốn tránh scroll toàn trang */
   -webkit-user-select: none;
   /* Safari */
@@ -45,6 +46,8 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1 {

@@ -8,7 +8,7 @@ interface LoginResponse {
 }
 
 export const loginUser = async (email: string, password: string): Promise<LoginResponse> => {
-  const url = `${import.meta.env.VITE_API_URL}/login`;
+  const url = `${import.meta.env.VITE_API_URL}/auth/login`;
 
   const response = await fetch(url, {
     method: "POST",
@@ -33,7 +33,7 @@ interface RegisterResponse {
 }
 
 export const registerUser = async (name: string, email: string, password: string): Promise<RegisterResponse> => {
-  const url = `${import.meta.env.VITE_API_URL}/register`;
+  const url = `${import.meta.env.VITE_API_URL}/auth/register`;
 
   const response = await fetch(url, {
     method: "POST",

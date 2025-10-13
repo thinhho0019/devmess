@@ -1,12 +1,15 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
-import { Search, UserPlus, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search, UserPlus, Check, Loader2, X } from "lucide-react";
+import type { UserResponse } from "../../types/UserResponse";
+import { findUserByEmail } from "../../services/user/userService";
+import { getAuthToken } from "../../utils/Auth";
 
 interface PopupFindFriendsProps {
   show: boolean;
   onClose: () => void;
   onAddFriend: (email: string) => void;
-  friendsList?: { name: string; email: string; avatar?: string; added?: boolean }[];
+  friendsList?: { name: string; email: string; avatar?: string; added?: boolean, token?: string }[];
 }
 
 export const PopupFindFriends = ({
@@ -17,18 +20,62 @@ export const PopupFindFriends = ({
 }: PopupFindFriendsProps) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<typeof friendsList>([]);
+  // per-user UI status: idle | sending | sended | canceled | accepted
+  const [statuses, setStatuses] = useState<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    friendsList.forEach((f) => {
+      if (f.email && f.added) map[f.email] = "accepted";
+    });
+    return map;
+  });
 
-  const handleSearch = () => {
+  useEffect(() => {
+    // sync statuses when friendsList changes (e.g., initial data)
+    setStatuses((prev) => {
+      const next = { ...prev };
+      friendsList.forEach((f) => {
+        if (f.email && f.added) next[f.email] = "accepted";
+      });
+      return next;
+    });
+  }, [friendsList]);
+
+  const setStatus = (email: string, status: string) => {
+    setStatuses((s) => ({ ...s, [email]: status }));
+  };
+
+  const handleSearch = async () => {
     if (!query.trim()) {
       setResults([]);
       return;
     }
+    const userFound: UserResponse = await findUserByEmail(query.trim());
+    if (userFound && userFound.email) {
+      setResults([{
+        name: userFound.name || "Unknown",
+        email: userFound.email,
+        avatar: userFound.avatar,
+        token: getAuthToken() || undefined,
+        added: friendsList.some((f) => f.email === userFound.email)
+      }]);
+    }
+  };
 
-    // 🔍 Fake filter — thay bằng API thực tế trong backend
-    const filtered = friendsList.filter((f) =>
-      f.email.toLowerCase().includes(query.toLowerCase())
-    );
-    setResults(filtered);
+  const handleAddClick = async (email: string) => {
+    try {
+      setStatus(email, "sending");
+      // support promise or void: await regardless
+      await Promise.resolve(onAddFriend(email));
+      setStatus(email, "sended");
+    } catch (err) {
+      console.error("Add friend failed", err);
+      setStatus(email, "idle");
+    }
+  };
+
+  const handleCancelClick = async (email: string) => {
+    // local UI cancel — if you have an API to cancel request, call it here
+    setStatus(email, "canceled");
   };
 
   return (
@@ -79,33 +126,70 @@ export const PopupFindFriends = ({
                   No users found. Try another Gmail.
                 </p>
               ) : (
-                results.map((user, index) => (
+                results.map((user) => (
                   <div
-                    key={index}
+                    key={user.email}
                     className="flex items-center justify-between bg-gray-800/50 p-3 rounded-xl hover:bg-gray-800 transition"
                   >
                     <div className="flex items-center gap-3">
-                      <img
-                        src={
-                          user.avatar ||
-                          `https://ui-avatars.com/api/?name=${user.name}&background=1e293b&color=fff`
-                        }
-                        alt="avatar"
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
+                      {(() => {
+                        const hasAvatar = !!user.avatar;
+                        const avatarSrc = hasAvatar
+                          ? `${import.meta.env.VITE_API_URL}/protected/?filename=${encodeURIComponent(
+                            String(user.avatar)
+                          )}&token=${encodeURIComponent(String(user.token ?? ""))}`
+                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                            String(user.name || "")
+                          )}&background=1e293b&color=fff`;
+                        return (
+                          <img
+                            src={avatarSrc}
+                            alt="avatar"
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        );
+                      })()}
                       <div>
                         <h4 className="font-semibold text-[15px]">{user.name}</h4>
                         <p className="text-sm text-gray-400">{user.email}</p>
                       </div>
                     </div>
-
-                    {user.added ? (
+                    {user.added || statuses[user.email] === "accepted" ? (
                       <div className="flex items-center gap-1 text-green-400 text-sm font-medium">
                         <Check className="w-4 h-4" /> Added
                       </div>
+                    ) : statuses[user.email] === "sending" ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled
+                          className="flex items-center gap-2 bg-indigo-600/80 px-3 py-1.5 rounded-lg text-sm font-medium opacity-80"
+                        >
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Sending
+                        </button>
+                        <button
+                          onClick={() => handleCancelClick(user.email)}
+                          className="flex items-center gap-1 bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-lg text-sm font-medium"
+                        >
+                          <X className="w-4 h-4" />
+                          Cancel
+                        </button>
+                      </div>
+                    ) : statuses[user.email] === "sended" ? (
+                      <div className="flex items-center gap-1 text-indigo-400 text-sm font-medium">
+                        <Check className="w-4 h-4" /> Sent
+                      </div>
+                    ) : statuses[user.email] === "canceled" ? (
+                      <button
+                        onClick={() => handleAddClick(user.email)}
+                        className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-lg text-sm font-medium"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        Retry
+                      </button>
                     ) : (
                       <button
-                        onClick={() => onAddFriend(user.email)}
+                        onClick={() => handleAddClick(user.email)}
                         className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-lg text-sm font-medium"
                       >
                         <UserPlus className="w-4 h-4" />
