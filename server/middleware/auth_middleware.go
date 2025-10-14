@@ -11,7 +11,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func VerifyAccessToken(c *gin.Context) {
+type AuthMiddleware struct {
+	authService *service.AuthService
+}
+
+func NewAuthMiddleware(authService *service.AuthService) *AuthMiddleware {
+	return &AuthMiddleware{authService: authService}
+}
+func (m *AuthMiddleware) VerifyAccessToken(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
 
 	if authHeader == "" {
@@ -26,7 +33,7 @@ func VerifyAccessToken(c *gin.Context) {
 	}
 	accessToken := parts[1]
 
-	user, _, err := service.VerifyAccessToken(accessToken)
+	user, _, err := m.authService.VerifyAccessToken(accessToken)
 
 	if err != nil && !errors.Is(err, service.ErrInvalidOrExpired) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify access token: " + err.Error()})

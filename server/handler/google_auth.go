@@ -12,12 +12,20 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-var GoogleOAuthConfig *oauth2.Config
 
-func InitGoogleOAuth(clientID, clientSecret, redirectURL string) {
+type AuthGoogleHandler struct {
+	authService *service.AuthService
+	GoogleOAuthConfig *oauth2.Config
+}
+
+func NewAuthGoogleHandler(authService *service.AuthService, GoogleOAuthConfig *oauth2.Config) *AuthGoogleHandler {
+	return &AuthGoogleHandler{authService: authService, GoogleOAuthConfig: GoogleOAuthConfig}
+}
+
+func (h *AuthGoogleHandler) InitGoogleOAuth(clientID, clientSecret, redirectURL string) {
 	fmt.Println("Initializing Google OAuth with Client ID:", clientID)
 	fmt.Println("Client Secret:", clientSecret)
-	GoogleOAuthConfig = &oauth2.Config{
+	h.GoogleOAuthConfig = &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		RedirectURL:  redirectURL,
@@ -29,28 +37,31 @@ func InitGoogleOAuth(clientID, clientSecret, redirectURL string) {
 	}
 }
 
-func GoogleLoginHandler(c *gin.Context) {
-	url := GoogleOAuthConfig.AuthCodeURL("state-token", oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("prompt", "consent"))
+func (h *AuthGoogleHandler) GoogleLoginHandler(c *gin.Context) {
+	url := h.GoogleOAuthConfig.AuthCodeURL("state-token", oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("prompt", "consent"))
 	fmt.Println("Redirecting to:", url)
 	http.Redirect(c.Writer, c.Request, url, http.StatusTemporaryRedirect)
 }
 
-func GoogleCallBackHandler(c *gin.Context) {
+func (h *AuthGoogleHandler) GoogleCallBackHandler(c *gin.Context) {
 	code := c.Query("code")
-	// init repo redis save cache accesstoken
 
 	if code == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing 'code' parameter"})
 		return
 	}
 
-	_, tokenModel, _, err := service.HandleGoogleCallback(
+ 
+
+	_, tokenModel, _, err := h.authService.HandleGoogleCallback(
 		code,
 		c.ClientIP(),
 		c.GetHeader("User-Agent"),
-		GoogleOAuthConfig,
+		h.GoogleOAuthConfig,
 	)
 	if err != nil {
+		// log error server-side để debug, trả lỗi cho client bằng redirect hoặc json
+		fmt.Println("Google callback error:", err)
 		redirectURLError := fmt.Sprintf("/error?msg=%s", url.QueryEscape(err.Error()))
 		c.Redirect(http.StatusTemporaryRedirect, redirectURLError)
 		return
@@ -61,10 +72,7 @@ func GoogleCallBackHandler(c *gin.Context) {
 		os.Getenv("DEFAULT_URL"),
 		tokenModel.AccessToken,
 	)
-	// save accesstoken to redis
 
 	fmt.Println("Redirecting to:", redirectURL)
 	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 }
-
- 

@@ -32,8 +32,16 @@ type ResetPasswordRequest struct {
 	Token    string `json:"token" binding:"required"`
 	Password string `json:"password" binding:"required,min=6"`
 }
+type AuthHandler struct {
+	userService *service.UserService
+	authService *service.AuthService
+}
 
-func AuthHandle(c *gin.Context) {
+func NewAuthHandler(userService *service.UserService, authService *service.AuthService) *AuthHandler {
+	return &AuthHandler{userService: userService, authService: authService}
+}
+
+func (a *AuthHandler) AuthHandle(c *gin.Context) {
 
 	userValue, exists := c.Get("user")
 	if !exists {
@@ -57,13 +65,13 @@ func AuthHandle(c *gin.Context) {
 	})
 }
 
-func Register(c *gin.Context) {
+func (a *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	 
+
 	// --- Khởi tạo repository và service ---
 	userRepo := repository.NewUserRepository()
 	userService := service.NewUserService(userRepo)
@@ -87,13 +95,11 @@ func Register(c *gin.Context) {
 	}
 
 	// --- Tự động đăng nhập và tạo session sau khi đăng ký ---
-	deviceRepo := repository.NewDeviceRepository()
-	tokenRepo := repository.NewTokenRepository()
-	redisRepo := repository.NewRedisRepository()
+
 	ip := c.ClientIP()
 	userAgent := c.Request.UserAgent()
 
-	token, _, err := service.CreateSession(userRepo, deviceRepo, tokenRepo, redisRepo, user, ip, userAgent, "", "", 0, "local")
+	token, _, err := a.authService.CreateSession(user, ip, userAgent, "", "", 0, "local")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create session after registration: " + err.Error()})
 		return
@@ -106,7 +112,7 @@ func Register(c *gin.Context) {
 	})
 }
 
-func LoginPassword(c *gin.Context) {
+func (a *AuthHandler) LoginPassword(c *gin.Context) {
 	var req LoginRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
@@ -126,17 +132,12 @@ func LoginPassword(c *gin.Context) {
 		return
 	}
 
-	// --- Tạo Session (Device & Token) ---
-	deviceRepo := repository.NewDeviceRepository()
-	tokenRepo := repository.NewTokenRepository()
-	redisRepo := repository.NewRedisRepository()
-
 	ip := c.ClientIP()
 	userAgent := c.Request.UserAgent()
 
 	// Gọi service để tạo session.
 	// Truyền chuỗi rỗng và 0 vì đây là đăng nhập bằng mật khẩu, không có token/expiresIn từ bên ngoài.
-	token, _, err := service.CreateSession(userRepo, deviceRepo, tokenRepo, redisRepo, user, ip, userAgent, "", "", 0, "local")
+	token, _, err := a.authService.CreateSession(user, ip, userAgent, "", "", 0, "local")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create session: " + err.Error()})
 		return
@@ -144,7 +145,7 @@ func LoginPassword(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"access_token": token.AccessToken})
 }
 
-func CheckEmailExist(c *gin.Context) {
+func (a *AuthHandler) CheckEmailExist(c *gin.Context) {
 	var req EmailRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
@@ -170,7 +171,7 @@ func CheckEmailExist(c *gin.Context) {
 }
 
 // ForgotPassword: tạo reset token và gửi link (không tiết lộ email tồn tại)
-func ForgotPassword(c *gin.Context) {
+func (a *AuthHandler) ForgotPassword(c *gin.Context) {
 	var req ForgotPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -209,7 +210,7 @@ func ForgotPassword(c *gin.Context) {
 }
 
 // ResetPassword: verify token và cập nhật mật khẩu
-func ResetPassword(c *gin.Context) {
+func (a *AuthHandler) ResetPassword(c *gin.Context) {
 	var req ResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

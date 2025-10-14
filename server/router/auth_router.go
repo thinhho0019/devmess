@@ -7,10 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AuthRouter(r *gin.Engine) {
-	protected := r.Group("/api/v1", middleware.VerifyAccessToken)
+func AuthRouter(r *gin.Engine, authHandler *handler.AuthHandler, authMiddleware *middleware.AuthMiddleware) {
+	protected := r.Group("/api/v1", authMiddleware.VerifyAccessToken)
 	{
-		protected.GET("/auth-me", handler.AuthHandle)
+		protected.GET("/auth-me", authHandler.AuthHandle)
 	}
 
 }

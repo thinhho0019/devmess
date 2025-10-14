@@ -8,9 +8,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type ImageHandler struct {
+	authService *service.AuthService
+}
+
+func NewImageHandler(authService *service.AuthService) *ImageHandler {
+	return &ImageHandler{authService: authService}
+}
+
 // ServeImage xử lý yêu cầu trả về một file ảnh.
 // Nó lấy tên file từ URL parameter và phục vụ file từ một thư mục cố định (ví dụ: "uploads").
-func ServeImage(c *gin.Context) {
+func (h *ImageHandler) ServeImage(c *gin.Context) {
 	// Lấy tên file từ URL. Ví dụ: /images/my-avatar.png -> filename = "my-avatar.png"
 	filename := c.Param("filename")
 	if filename == "" {
@@ -29,7 +37,7 @@ func ServeImage(c *gin.Context) {
 	c.File(imagePath)
 }
 
-func ProtectShowImage(c *gin.Context) {
+func (h *ImageHandler) ProtectShowImage(c *gin.Context) {
 	filename := c.Query("filename")
 	token := c.Query("token")
 	if token == "" {
@@ -42,7 +50,7 @@ func ProtectShowImage(c *gin.Context) {
 	}
 	// check token for user access
 	imagePath := filepath.Join("uploads", filename)
-	user, _, err := service.VerifyAccessToken(token)
+	user, _, err := h.authService.VerifyAccessToken(token)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify access token: " + err.Error()})
 		return

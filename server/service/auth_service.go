@@ -21,19 +21,36 @@ var TokenSourceFunc = func(cfg *oauth2.Config, ctx context.Context, t *oauth2.To
 	return cfg.TokenSource(ctx, t)
 }
 
-// LoginWithGoogle xử lý logic login Google
-func LoginWithGoogle(
-	usrRepo repository.UserRepository,
+type AuthService struct {
+	userRepo   repository.UserRepository
+	deviceRepo repository.DeviceRepository
+	tokenRepo  repository.TokenRepository
+	redisRepo  repository.RedisRepository
+}
+
+func NewAuthService(
+	userRepo repository.UserRepository,
 	deviceRepo repository.DeviceRepository,
 	tokenRepo repository.TokenRepository,
 	redisRepo repository.RedisRepository,
+) *AuthService {
+	return &AuthService{
+		userRepo:   userRepo,
+		deviceRepo: deviceRepo,
+		tokenRepo:  tokenRepo,
+		redisRepo:  redisRepo,
+	}
+}
+
+// LoginWithGoogle xử lý logic login Google
+func (a *AuthService) LoginWithGoogle(
 	userInfo *models.GoogleUserInfo,
 	ip, userAgent string,
 ) (*models.Token, *models.Device, error) {
 	fmt.Println("🔹 Start LoginWithGoogle")
 
 	// 1️⃣ Kiểm tra user đã tồn tại
-	user, err := usrRepo.GetUserByEmail(userInfo.Email)
+	user, err := a.userRepo.GetUserByEmail(userInfo.Email)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get user: %w", err)
 	}
@@ -45,22 +62,19 @@ func LoginWithGoogle(
 			Avatar:   userInfo.Picture,
 			Provider: "google",
 		}
-		user, err = usrRepo.CreateUser(user)
+		user, err = a.userRepo.CreateUser(user)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create user: %w", err)
 		}
 	}
 
 	// Gọi hàm tạo session chung
-	return CreateSession(usrRepo, deviceRepo, tokenRepo, redisRepo, user, ip, userAgent, userInfo.AccessToken, userInfo.RefreshToken, int64(userInfo.ExpiresIn), "google")
+	return a.CreateSession(user, ip, userAgent, userInfo.AccessToken, userInfo.RefreshToken, int64(userInfo.ExpiresIn), "google")
 }
 
 // CreateSession tạo hoặc cập nhật device, tạo token và lưu vào Redis
-func CreateSession(
-	usrRepo repository.UserRepository,
-	deviceRepo repository.DeviceRepository,
-	tokenRepo repository.TokenRepository,
-	redisRepo repository.RedisRepository,
+func (a *AuthService) CreateSession(
+
 	user *models.User,
 	ip, userAgent, accessToken, refreshToken string,
 	expiresIn int64,
@@ -69,7 +83,7 @@ func CreateSession(
 	// 2️⃣ Nhận dạng thiết bị
 	deviceType, deviceName := detectDevice(userAgent)
 	user.Provider = provider
-	existingDevice, err := deviceRepo.GetDeviceByInfo(user.ID, ip, userAgent)
+	existingDevice, err := a.deviceRepo.GetDeviceByInfo(user.ID, ip, userAgent)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to check existing device: %w", err)
 	}
@@ -84,23 +98,23 @@ func CreateSession(
 			IP:        ip,
 			UserAgent: userAgent,
 		}
-		if _, err := deviceRepo.CreateDevice(device); err != nil {
+		if _, err := a.deviceRepo.CreateDevice(device); err != nil {
 			return nil, nil, err
 		}
 	} else {
 		device = existingDevice
-		if _, err := deviceRepo.UpdateDevice(device); err != nil {
+		if _, err := a.deviceRepo.UpdateDevice(device); err != nil {
 			return nil, nil, err
 		}
 	}
 
 	// 3️⃣ Token
-	existingToken, err := tokenRepo.GetTokensByDeviceID(user.ID, device.ID.String())
+	existingToken, err := a.tokenRepo.GetTokensByDeviceID(user.ID, device.ID.String())
 	if err != nil {
 		return nil, nil, err
 	}
 	if existingToken != nil {
-		if err := tokenRepo.DeleteTokenByID(existingToken.ID); err != nil {
+		if err := a.tokenRepo.DeleteTokenByID(existingToken.ID); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -135,11 +149,12 @@ func CreateSession(
 		TokenType:    "Bearer",
 	}
 	fmt.Printf("Token struct: %+v\n", token)
-	if err := tokenRepo.CreateToken(token); err != nil {
+	if err := a.tokenRepo.CreateToken(token); err != nil {
 		return nil, nil, err
 	}
 	time_duration := time.Until(time.Unix(token.ExpiresAt, 0))
-	if err := redisRepo.SetToken(token.AccessToken, user, time_duration); err != nil {
+	if err := a.redisRepo.SetToken(token.AccessToken, user, time_duration); err != nil {
+		fmt.Println("❌ Failed to save access token to Redis:", err)
 		return token, device, errors.New("error save access token")
 	}
 	return token, device, nil
@@ -169,14 +184,12 @@ func detectDevice(userAgent string) (string, string) {
 	return deviceType, deviceName
 }
 
-func VerifyAccessToken(accessToken string) (*models.User, string, error) {
+func (a *AuthService) VerifyAccessToken(accessToken string) (*models.User, string, error) {
 	// check redis exits token
-	redisRepo := repository.NewRedisRepository()
-	repo := repository.NewTokenRepository()
-	if user, err := redisRepo.GetUserByToken(accessToken); err == nil {
+	if user, err := a.redisRepo.GetUserByToken(accessToken); err == nil {
 		return user, "", nil
 	}
-	user, refreshToken, err := repo.GetUserForAccessToken(accessToken)
+	user, refreshToken, err := a.tokenRepo.GetUserForAccessToken(accessToken)
 
 	// 1️⃣ Nếu có lỗi nhưng repo vẫn cấp refresh token mới
 	if err != nil {
@@ -210,7 +223,7 @@ func RefreshAccessToken(clientID, clientSecret, refreshToken string, googleAuthC
 	return newToken, nil
 }
 
-var HandleGoogleCallback = func(code, ip, userAgent string, GoogleOAuthConfig *oauth2.Config) (*models.GoogleUserInfo, *models.Token, *models.Device, error) {
+func (a *AuthService) HandleGoogleCallback(code, ip, userAgent string, GoogleOAuthConfig *oauth2.Config) (*models.GoogleUserInfo, *models.Token, *models.Device, error) {
 	if GoogleOAuthConfig == nil {
 		return nil, nil, nil, errors.New("GoogleOAuthConfig not initialized")
 	}
@@ -239,18 +252,8 @@ var HandleGoogleCallback = func(code, ip, userAgent string, GoogleOAuthConfig *o
 	userInfo.AccessToken = token.AccessToken
 	userInfo.RefreshToken = token.RefreshToken
 	userInfo.ExpiresIn = token.Expiry.Unix()
-	userRepo := repository.NewUserRepository()
-	deviceRepo := repository.NewDeviceRepository()
-	tokenRepo := repository.NewTokenRepository()
-	redisRepo := repository.NewRedisRepository()
-	tokenModel, device, err := LoginWithGoogle(
-		userRepo,
-		deviceRepo,
-		tokenRepo,
-		redisRepo,
-		&userInfo,
-		ip,
-		userAgent)
+
+	tokenModel, device, err := a.LoginWithGoogle(&userInfo, ip, userAgent)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("login failed: %v", err)
 	}

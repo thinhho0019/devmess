@@ -39,6 +39,7 @@ jobs:
       - name: Create .env file for production
         env:
           VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: echo "VITE_WS_URL=${VITE_WS_URL}" > .env
 
       - name: Build Vite project
@@ -82,57 +83,98 @@ jobs:
         with:
           name: backend-binary
           path: server/app
+      - name: Create .env
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REDIRECT_URL: ${{ secrets.GOOGLE_REDIRECT_URL }}
+          DEFAULT_URL: ${{ secrets.DEFAULT_URL }}
+          DEFAULT_URL_SERVER: ${{ secrets.DEFAULT_URL_SERVER }}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          SMTP_EMAIL: ${{ secrets.SMTP_EMAIL }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SPACES_KEY: ${{ secrets.SPACES_KEY }}
+          SPACES_SECRET: ${{ secrets.SPACES_SECRET }}
+          SPACES_REGION: ${{ secrets.SPACES_REGION }}
+          SPACES_BUCKET: ${{ secrets.SPACES_BUCKET }}
+          SPACES_ENDPOINT: ${{ secrets.SPACES_ENDPOINT }}
+        run: |
+          cat > .env <<EOF
+          DB_HOST=${DB_HOST}
+          DB_PORT=${DB_PORT}
+          DB_USER=${DB_USER}
+          DB_PASSWORD=${DB_PASSWORD}
+          DB_NAME=${DB_NAME}
+          GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+          GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+          GOOGLE_REDIRECT_URL=${GOOGLE_REDIRECT_URL}
+          DEFAULT_URL=${DEFAULT_URL}
+          DEFAULT_URL_SERVER=${DEFAULT_URL_SERVER}
+          JWT_SECRET_KEY=${JWT_SECRET_KEY}
+          SMTP_EMAIL=${SMTP_EMAIL}
+          SMTP_PASSWORD=${SMTP_PASSWORD}
+          SPACES_KEY=${SPACES_KEY}
+          SPACES_SECRET=${SPACES_SECRET}
+          SPACES_REGION=${SPACES_REGION}
+          SPACES_BUCKET=${SPACES_BUCKET}
+          SPACES_ENDPOINT=${SPACES_ENDPOINT}
+          EOF
+
     # ---------- DEPLOY ----------
-  deploy:
-    name: Deploy to Server
-    runs-on: ubuntu-latest
-    needs: [frontend, backend]
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Download backend artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-binary
-          path: ./server_bin # tải binary về thư mục server_bin/
-
-      - name: Download frontend artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: ./frontend_dist
-
-      - name: Copy files to VPS via SSH
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "frontend_dist,server_bin/app"
-          target: /var/www/devmess
-
-      - name: Deploy Backend & Setup Nginx
+      - name: Deploy Backend & Setup Nginx + Databases
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
+            set -e
             cd /var/www/devmess
+
             echo "🔑 Granting execute permission..."
             sudo chmod +x server_bin/app
 
+            # --- Install PostgreSQL & Redis ---
+            echo "📦 Installing PostgreSQL & Redis..."
+            if ! command -v psql &> /dev/null; then
+              sudo apt update -y
+              sudo apt install -y postgresql postgresql-contrib
+              sudo systemctl enable postgresql
+              sudo systemctl start postgresql
+            fi
+
+            if ! command -v redis-server &> /dev/null; then
+              sudo apt install -y redis-server
+              sudo systemctl enable redis-server
+              sudo systemctl start redis-server
+            fi
+
+            echo "🧩 Configuring PostgreSQL user and database..."
+            sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='admin'" | grep -q 1 || \
+              sudo -u postgres psql -c "CREATE USER admin WITH PASSWORD 'admin123';"
+
+            sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw mydb || \
+              sudo -u postgres psql -c "CREATE DATABASE mydb OWNER admin;"
+
+            echo "✅ PostgreSQL ready!"
+            echo "✅ Redis ready!"
+
+            # --- Setup Backend systemd service ---
             echo "⚙️ Creating systemd service..."
             sudo bash -c 'cat > /etc/systemd/system/devmess-backend.service <<EOF
             [Unit]
             Description=Go Backend for Devmess
-            After=network.target
+            After=network.target postgresql.service redis-server.service
 
             [Service]
             User=root
             WorkingDirectory=/var/www/devmess
+            EnvironmentFile=/var/www/devmess/.env
             ExecStart=/var/www/devmess/server_bin/app
             Restart=always
 
@@ -147,7 +189,7 @@ jobs:
 
             # --- Setup Nginx ---
             if ! command -v nginx &> /dev/null; then
-              sudo apt update -y && sudo apt install -y nginx
+              sudo apt install -y nginx
             fi
 
             sudo bash -c 'cat > /etc/nginx/sites-available/devmess <<EOF
@@ -160,6 +202,14 @@ jobs:
 
                 location / {
                     try_files \$uri /index.html;
+                }
+
+                location /api/ {
+                    proxy_pass http://127.0.0.1:8080/;
+                    proxy_set_header Host \$host;
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto \$scheme;
                 }
 
                 location /ws {
