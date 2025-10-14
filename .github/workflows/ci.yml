@@ -152,13 +152,19 @@ jobs:
           name: frontend-dist
           path: ./frontend_dist
 
+      - name: Download backend .env
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-env
+          path: ./server_env
+
       - name: Copy files to VPS via SSH
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "frontend_dist,server_bin/app"
+          source: "frontend_dist,server_bin/app,server_env/.env"
           target: /var/www/devmess
       - name: Create redis and postgres services on server
         uses: appleboy/ssh-action@v1.0.3
@@ -215,6 +221,11 @@ jobs:
             echo "🔑 Granting execute permission..."
             sudo chmod +x server_bin/app
 
+            # Copy .env to correct location
+            echo "📋 Moving .env file..."
+            cp server_env/.env .env || echo "⚠️ .env file not found"
+            ls -la .env || echo "⚠️ .env verification failed"
+
             echo "⚙️ Creating systemd service..."
             sudo bash -c 'cat > /etc/systemd/system/devmess-backend.service <<EOF
             [Unit]
@@ -225,6 +236,7 @@ jobs:
             User=root
             WorkingDirectory=/var/www/devmess
             ExecStart=/var/www/devmess/server_bin/app
+            Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
             Restart=always
 
             [Install]
@@ -234,7 +246,11 @@ jobs:
             sudo systemctl daemon-reload
             sudo systemctl enable devmess-backend.service
             sudo systemctl restart devmess-backend.service
-            echo "✅ Backend is running!"
+            
+            # Check service status
+            echo "🔍 Checking service status..."
+            sudo systemctl status devmess-backend.service --no-pager -l
+            echo "✅ Backend deployment complete!"
 
             # --- Setup Nginx ---
             if ! command -v nginx &> /dev/null; then
