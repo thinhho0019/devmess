@@ -120,14 +120,13 @@ jobs:
           SPACES_ENDPOINT=${SPACES_ENDPOINT}
           EOF
 
+          ls -la .env  # kiểm tra file đã tạo
+
       - name: Upload backend binary
         uses: actions/upload-artifact@v4
         with:
           name: backend-binary
           path: server/app
-
-      - name: Copy .env to root repo
-        run: cp server/.env .env
 
       - name: Upload backend .env
         uses: actions/upload-artifact@v4
