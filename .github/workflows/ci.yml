@@ -195,7 +195,8 @@ jobs:
             User=root
             WorkingDirectory=/var/www/devmess
             ExecStart=/var/www/devmess/server_bin/app
-            Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+            EnvironmentFile=/var/www/devmess/.env
+            # Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
             Restart=always
             [Install]
             WantedBy=multi-user.target
