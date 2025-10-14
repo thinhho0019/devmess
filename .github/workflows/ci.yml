@@ -82,7 +82,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: backend-binary
-          path: server/app
+          path: app
 
       - name: Create .env
         env:
@@ -135,7 +135,10 @@ jobs:
       - name: Debug .env
         run: |
           echo "PWD: $(pwd)"
-          ls -la server/
+          echo "Contents of current directory:"
+          ls -la .
+          echo "Parent directory contents:"
+          ls -la ../
 
       - name: Upload .env file
         uses: actions/upload-artifact@v4
