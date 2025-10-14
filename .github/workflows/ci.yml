@@ -166,11 +166,19 @@ jobs:
 
             # PostgreSQL
             if ! command -v psql &> /dev/null; then
-              sudo apt update -y && sudo apt install -y postgresql postgresql-contrib
-              sudo -u postgres psql -c "CREATE USER ${{ secrets.DB_USER }} WITH PASSWORD '${{ secrets.DB_PASSWORD }}';"
-              sudo -u postgres psql -c "CREATE DATABASE ${{ secrets.DB_NAME }} OWNER ${{ secrets.DB_USER }};"
-              sudo systemctl enable postgresql
-              sudo systemctl start postgresql
+            sudo apt update -y && sudo apt install -y postgresql postgresql-contrib
+
+            # tạo user
+            sudo -u postgres psql -c "CREATE USER ${{ secrets.DB_USER }} WITH PASSWORD '${{ secrets.DB_PASSWORD }}';"
+
+            # tạo database
+            sudo -u postgres psql -c "CREATE DATABASE ${{ secrets.DB_NAME }} OWNER ${{ secrets.DB_USER }};"
+
+            # cấp tất cả quyền trên database cho user
+            sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${{ secrets.DB_NAME }} TO ${{ secrets.DB_USER }};"
+
+            sudo systemctl enable postgresql
+            sudo systemctl start postgresql
             fi
 
       - name: Deploy Backend & Setup Nginx
