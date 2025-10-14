@@ -135,11 +135,14 @@ jobs:
           name: backend-binary
           path: server/app
 
+      - name: Move .env to root
+        run: mv server/.env ./
+
       - name: Upload .env file
         uses: actions/upload-artifact@v4
         with:
           name: backend-env
-          path: server/.env
+          path: .env
 
     # ---------- DEPLOY ----------
   deploy:
