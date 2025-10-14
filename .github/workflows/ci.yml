@@ -155,7 +155,50 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "frontend_dist,server_bin/app"
           target: /var/www/devmess
+      - name: Create redis and postgres services on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            # --- Create Redis service ---
+            if ! command -v redis-server &> /dev/null; then
+              sudo apt update -y && sudo apt install -y redis-server
+            fi
 
+            sudo bash -c 'cat > /etc/systemd/system/redis.service <<EOF
+            [Unit]
+            Description=Redis In-Memory Data Store
+            After=network.target
+
+            [Service]
+            User=redis
+            Group=redis
+            ExecStart=/usr/bin/redis-server /etc/redis/redis.conf
+            ExecStop=/usr/bin/redis-cli shutdown
+            Restart=always
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF'
+
+            sudo systemctl daemon-reload
+            sudo systemctl enable redis.service
+            sudo systemctl start redis.service
+            echo "✅ Redis service is running!"
+
+            # --- Create PostgreSQL service ---
+            if ! command -v psql &> /dev/null; then
+              sudo apt update -y && sudo apt install -y postgresql postgresql-contrib
+              sudo -u postgres psql -c "CREATE USER ${{ secrets.DB_USER }} WITH PASSWORD '${{ secrets.DB_PASSWORD }}';"
+              sudo -u postgres psql -c "CREATE DATABASE ${{ secrets.DB_NAME }} OWNER ${{ secrets.DB_USER }};"
+              echo "✅ PostgreSQL user and database created!"
+              sudo systemctl enable postgresql
+              sudo systemctl start postgresql
+              echo "✅ PostgreSQL service is running!"
+            fi
+        
       - name: Deploy Backend & Setup Nginx
         uses: appleboy/ssh-action@v1.0.3
         with:
