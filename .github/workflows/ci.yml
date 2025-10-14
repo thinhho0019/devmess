@@ -128,7 +128,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: backend-env
-          path: .env
+          path: server/.env
 
     # ---------- DEPLOY ----------
   deploy:
