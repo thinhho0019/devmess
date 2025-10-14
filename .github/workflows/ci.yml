@@ -78,12 +78,6 @@ jobs:
       - name: Build Go binary
         run: go build -o app main.go
 
-      - name: Upload backend binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-binary
-          path: app
-
       - name: Create .env
         env:
           DB_HOST: ${{ secrets.DB_HOST }}
@@ -126,25 +120,26 @@ jobs:
           SPACES_ENDPOINT=${SPACES_ENDPOINT}
           EOF
 
-      - name: Check .env location
+      - name: Verify files
         run: |
+          echo "Files in server directory:"
           ls -la .
-          pwd
-          cat .env | head -3
-          
-      - name: Debug .env
-        run: |
-          echo "PWD: $(pwd)"
-          echo "Contents of current directory:"
-          ls -la .
-          echo "Parent directory contents:"
-          ls -la ../
+          echo "Backend binary exists:"
+          ls -la app
+          echo ".env file exists:"
+          ls -la .env
+
+      - name: Upload backend binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-binary
+          path: server/app
 
       - name: Upload .env file
         uses: actions/upload-artifact@v4
         with:
           name: backend-env
-          path: .env
+          path: server/.env
 
     # ---------- DEPLOY ----------
   deploy:
