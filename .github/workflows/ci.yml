@@ -83,6 +83,7 @@ jobs:
         with:
           name: backend-binary
           path: server/app
+
       - name: Create .env
         env:
           DB_HOST: ${{ secrets.DB_HOST }}
@@ -124,15 +125,18 @@ jobs:
           SPACES_BUCKET=${SPACES_BUCKET}
           SPACES_ENDPOINT=${SPACES_ENDPOINT}
           EOF
-          
-      - name: Check .env
-        run: ls -la server/
+
+      - name: Check .env location
+        run: |
+          ls -la .
+          pwd
+          cat .env | head -3
 
       - name: Upload .env file
         uses: actions/upload-artifact@v4
         with:
           name: backend-env
-          path: .env
+          path: server/.env
 
     # ---------- DEPLOY ----------
   deploy:
