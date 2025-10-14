@@ -120,35 +120,28 @@ jobs:
           SPACES_ENDPOINT=${SPACES_ENDPOINT}
           EOF
 
-      - name: Verify files
-        run: |
-          echo "Files in server directory:"
-          ls -la server/
-          echo "Backend binary exists:"
-          ls -la server/app
-          echo ".env file exists:"
-          ls -la server/.env
-
       - name: Upload backend binary
         uses: actions/upload-artifact@v4
         with:
           name: backend-binary
           path: server/app
-
-      - name: Move .env to root
-        run: mv server/.env ./
-
+  
+  upload:
+    runs-on: ubuntu-latest
+    needs: backend
+    steps:
+      - uses: actions/checkout@v3
       - name: Upload .env file
         uses: actions/upload-artifact@v4
         with:
           name: backend-env
-          path: .env
+          path: server/.env
 
     # ---------- DEPLOY ----------
   deploy:
     name: Deploy to Server
     runs-on: ubuntu-latest
-    needs: [frontend, backend]
+    needs: [frontend, backend, upload]
 
     steps:
       - name: Checkout repository
