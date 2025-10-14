@@ -56,10 +56,6 @@ jobs:
     name: Build & Test Backend
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: server
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -70,15 +66,19 @@ jobs:
           go-version: 1.21
 
       - name: Install dependencies
+        working-directory: server
         run: go mod tidy
 
       - name: Run Go tests
+        working-directory: server
         run: go test ./...
 
       - name: Build Go binary
+        working-directory: server
         run: go build -o app main.go
 
       - name: Create .env
+        working-directory: server
         env:
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
@@ -123,11 +123,11 @@ jobs:
       - name: Verify files
         run: |
           echo "Files in server directory:"
-          ls -la .
+          ls -la server/
           echo "Backend binary exists:"
-          ls -la app
+          ls -la server/app
           echo ".env file exists:"
-          ls -la .env
+          ls -la server/.env
 
       - name: Upload backend binary
         uses: actions/upload-artifact@v4
