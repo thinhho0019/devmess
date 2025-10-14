@@ -124,6 +124,11 @@ jobs:
           SPACES_BUCKET=${SPACES_BUCKET}
           SPACES_ENDPOINT=${SPACES_ENDPOINT}
           EOF
+      - name: Upload .env file
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-env
+          path: server/.env
 
     # ---------- DEPLOY ----------
   deploy:
