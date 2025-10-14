@@ -126,11 +126,14 @@ jobs:
           name: backend-binary
           path: server/app
 
+      - name: Copy .env to root repo
+        run: cp server/.env .env
+
       - name: Upload backend .env
         uses: actions/upload-artifact@v4
         with:
           name: backend-env
-          path: server/.env
+          path: .env
 
   # ---------- DEPLOY ----------
   deploy:
