@@ -124,6 +124,10 @@ jobs:
           SPACES_BUCKET=${SPACES_BUCKET}
           SPACES_ENDPOINT=${SPACES_ENDPOINT}
           EOF
+          
+      - name: Check .env
+        run: ls -la server/
+
       - name: Upload .env file
         uses: actions/upload-artifact@v4
         with:
