@@ -77,62 +77,13 @@ jobs:
 
       - name: Build Go binary
         run: go build -o app main.go
-
-      - name: Create .env
-        env:
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GOOGLE_REDIRECT_URL: ${{ secrets.GOOGLE_REDIRECT_URL }}
-          DEFAULT_URL: ${{ secrets.DEFAULT_URL }}
-          DEFAULT_URL_SERVER: ${{ secrets.DEFAULT_URL_SERVER }}
-          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
-          SMTP_EMAIL: ${{ secrets.SMTP_EMAIL }}
-          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-          SPACES_KEY: ${{ secrets.SPACES_KEY }}
-          SPACES_SECRET: ${{ secrets.SPACES_SECRET }}
-          SPACES_REGION: ${{ secrets.SPACES_REGION }}
-          SPACES_BUCKET: ${{ secrets.SPACES_BUCKET }}
-          SPACES_ENDPOINT: ${{ secrets.SPACES_ENDPOINT }}
-        run: |
-          cat > .env <<EOF
-          DB_HOST=${DB_HOST}
-          DB_PORT=${DB_PORT}
-          DB_USER=${DB_USER}
-          DB_PASSWORD=${DB_PASSWORD}
-          DB_NAME=${DB_NAME}
-          GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-          GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-          GOOGLE_REDIRECT_URL=${GOOGLE_REDIRECT_URL}
-          DEFAULT_URL=${DEFAULT_URL}
-          DEFAULT_URL_SERVER=${DEFAULT_URL_SERVER}
-          JWT_SECRET_KEY=${JWT_SECRET_KEY}
-          SMTP_EMAIL=${SMTP_EMAIL}
-          SMTP_PASSWORD=${SMTP_PASSWORD}
-          SPACES_KEY=${SPACES_KEY}
-          SPACES_SECRET=${SPACES_SECRET}
-          SPACES_REGION=${SPACES_REGION}
-          SPACES_BUCKET=${SPACES_BUCKET}
-          SPACES_ENDPOINT=${SPACES_ENDPOINT}
-          EOF
-
-          ls -la .env  # kiểm tra file đã tạo
-
+       
       - name: Upload backend binary
         uses: actions/upload-artifact@v4
         with:
           name: backend-binary
           path: server/app
-
-      - name: Upload backend .env
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-env
-          path: .env
+ 
 
   # ---------- DEPLOY ----------
   deploy:
@@ -170,6 +121,38 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "frontend_dist,server_bin/app,server_env/.env"
           target: /var/www/devmess
+      
+      - name: Deploy backend .env via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cat > /var/www/devmess/.env <<EOF
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_PORT=${{ secrets.DB_PORT }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            GOOGLE_REDIRECT_URL=${{ secrets.GOOGLE_REDIRECT_URL }}
+            DEFAULT_URL=${{ secrets.DEFAULT_URL }}
+            DEFAULT_URL_SERVER=${{ secrets.DEFAULT_URL_SERVER }}
+            JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+            SMTP_EMAIL=${{ secrets.SMTP_EMAIL }}
+            SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+            SPACES_KEY=${{ secrets.SPACES_KEY }}
+            SPACES_SECRET=${{ secrets.SPACES_SECRET }}
+            SPACES_REGION=${{ secrets.SPACES_REGION }}
+            SPACES_BUCKET=${{ secrets.SPACES_BUCKET }}
+            SPACES_ENDPOINT=${{ secrets.SPACES_ENDPOINT }}
+            EOF
+
+            chmod 600 /var/www/devmess/.env
+            echo "✅ .env file created on server"
+
 
       - name: Setup Redis & PostgreSQL on server
         uses: appleboy/ssh-action@v1.0.3
