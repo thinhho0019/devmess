@@ -180,7 +180,7 @@ func TestRefreshAccessToken(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			TokenSourceFunc = tc.mockFunc
 
-			token, err := RefreshAccessToken("client_id", "client_secret", "refresh_token", &oauth2.Config{})
+			token, err := RefreshAccessToken( "refresh_token", &oauth2.Config{})
 
 			if tc.expectedErr != nil {
 				assert.Error(t, err)

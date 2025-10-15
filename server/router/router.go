@@ -11,6 +11,7 @@ import (
 
 func SetupRouter(hub *websocket.Hub,
 	authHandler *handler.AuthHandler,
+	userHandler *handler.UserHandler,
 	authMiddleware *middleware.AuthMiddleware,
 	imageHandler *handler.ImageHandler) *gin.Engine {
 	r := gin.Default()
@@ -18,11 +19,11 @@ func SetupRouter(hub *websocket.Hub,
 	// CORS middleware
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
-			// "http://localhost",
-			// "http://localhost:80",
-			// "http://localhost:5173",
-			// "http://127.0.0.1",
-			// "http://127.0.0.1:80",
+			"http://localhost",
+			"http://localhost:80",
+			"http://localhost:5173",
+			"http://127.0.0.1",
+			"http://127.0.0.1:80",
 			"https://devmess.cloud",
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -38,7 +39,7 @@ func SetupRouter(hub *websocket.Hub,
 
 	// Gọi các module router
 	AuthRouter(r, authHandler, authMiddleware)
-	UserRouter(r, authHandler, authMiddleware)
+	UserRouter(r, authHandler, authMiddleware, userHandler)
 	ImageRouter(r, authMiddleware, imageHandler)
 	FriendshipRouter(r, authMiddleware)
 	return r

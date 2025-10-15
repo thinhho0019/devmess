@@ -12,6 +12,7 @@ import (
 
 type TokenRepository interface {
 	CreateToken(token *models.Token) error
+	UpdateToken(token *models.Token) error
 	GetTokenByRefresh(refresh string) (*models.Token, error)
 	GetTokenByAccess(access string) (*models.Token, error)
 	GetTokensByUserID(device_id string) (*models.Token, error)
@@ -29,6 +30,11 @@ var NewTokenRepository = func() TokenRepository {
 	return &tokenRepo{
 		db: database.DB,
 	}
+}
+
+func (r *tokenRepo) UpdateToken(token *models.Token) error {
+	token.UpdatedAt = time.Now()
+	return r.db.Save(token).Error
 }
 
 // ✅ Tạo token mới (thêm bản ghi)

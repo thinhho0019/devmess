@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FaSearch } from "react-icons/fa";
-import { FiEdit, FiMoreHorizontal, FiSend } from "react-icons/fi";
+import { FiEdit, FiMoreHorizontal, FiSend, FiSmile } from "react-icons/fi";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import imgAvatar from "../assets/img.jpg";
 import { Avatar } from "../components/avatar";
@@ -57,7 +57,8 @@ const chats: ChatMessage[] = [
 
 
 export default function HomeChat() {
-  const [selected, setSelected] = useState<ChatMessage | null>(chats[0]);
+  // Start with no selection so we can show a friendly empty state
+  const [selected, setSelected] = useState<ChatMessage | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [showAddFriend, setShowAddFriend] = useState(false);
   const isMobile = useIsMobile();
@@ -85,7 +86,7 @@ export default function HomeChat() {
           friendsList={mockUsers}
         />
         <PopupProfile user={user ?? undefined} onAvatarChange={() => { }} show={showProfile} onClose={() => { setShowProfile(false); }}></PopupProfile>
-        <div className="h-screen w-screen flex flex-col bg-gray-100 dark:bg-gray-900">
+        <div className="h-screen w-screen flex flex-col bg-gray-100 dark:bg-gray-900 chat-scroll">
 
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-center justify-between mb-4">
@@ -116,9 +117,18 @@ export default function HomeChat() {
             {selected ? (
               <ChatView id={selected.id.toString()} name={selected.name} is_mobile={isMobile} />
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-center">
-                <FiSend className="w-16 h-16 text-gray-400" />
-                <p className="mt-4 text-gray-500">Select a chat to start messaging</p>
+              <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                <div className="p-6 bg-white/5 rounded-full mb-4">
+                  <FiSmile className="w-16 h-16 text-pink-400" />
+                </div>
+                <p className="mt-2 text-gray-300 text-lg font-medium">Chọn người bạn muốn nhắn tin nhé 💬</p>
+                <p className="mt-2 text-gray-500 text-sm">Bấm nút bên dưới để tìm và thêm bạn mới.</p>
+                <button
+                  onClick={() => setShowAddFriend(true)}
+                  className="mt-5 inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full shadow"
+                >
+                  Tạo cuộc trò chuyện mới
+                </button>
               </div>
             )}
           </div>
@@ -136,7 +146,7 @@ export default function HomeChat() {
         friendsList={mockUsers}
       />
       <PopupProfile user={user ?? undefined} onAvatarChange={() => { }} show={showProfile} onClose={() => { setShowProfile(false); }}></PopupProfile>
-      <div className="h-screen w-screen bg-gray-100 dark:bg-gray-900">
+      <div className="h-screen w-screen bg-gray-100 dark:bg-gray-900 chat-scroll">
 
         <PanelGroup direction="horizontal" className="flex h-full w-full">
           <Panel defaultSize={25} minSize={20} maxSize={35} className="flex flex-col">

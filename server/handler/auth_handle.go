@@ -8,6 +8,7 @@ import (
 	"project/repository"
 	"project/service"
 	"project/utils"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,12 +34,13 @@ type ResetPasswordRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 }
 type AuthHandler struct {
-	userService *service.UserService
-	authService *service.AuthService
+	userService   *service.UserService
+	authService   *service.AuthService
+	googleService *service.GoogleService
 }
 
-func NewAuthHandler(userService *service.UserService, authService *service.AuthService) *AuthHandler {
-	return &AuthHandler{userService: userService, authService: authService}
+func NewAuthHandler(userService *service.UserService, authService *service.AuthService, googleService *service.GoogleService) *AuthHandler {
+	return &AuthHandler{userService: userService, authService: authService, googleService: googleService}
 }
 
 func (a *AuthHandler) AuthHandle(c *gin.Context) {
@@ -62,6 +64,62 @@ func (a *AuthHandler) AuthHandle(c *gin.Context) {
 		"avatar":    user.Avatar,
 		"createdAt": user.CreatedAt,
 		"updatedAt": user.UpdatedAt,
+	})
+}
+func (a *AuthHandler) AuthRefreshToken(c *gin.Context) {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing"})
+		return
+	}
+
+	// 1️⃣ Extract Bearer token
+	const bearerPrefix = "Bearer "
+	if !strings.HasPrefix(authHeader, bearerPrefix) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token format"})
+		return
+	}
+
+	accessToken := strings.TrimPrefix(authHeader, bearerPrefix)
+
+	// 2️⃣ Verify access token và lấy refresh token
+	user, refreshToken, err := a.authService.VerifyAccessToken(accessToken)
+	if err == nil && user != nil {
+		// Access token còn valid → không cần refresh
+		c.JSON(http.StatusOK, gin.H{
+			"message":      "Access token is still valid",
+			"access_token": accessToken,
+		})
+		return
+	}
+
+	// 3️⃣ Nếu access token expired nhưng có refresh token
+	if err == service.ErrInvalidOrExpired && refreshToken != "" {
+		// Verify refresh token
+		newToken, err := a.authService.RefreshToken(refreshToken, accessToken, a.googleService.OAuthConfig)
+		fmt.Println(newToken, err)
+		if err != nil {
+			// Refresh token invalid → yêu cầu login lại
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error":         "Refresh token invalid, please login again" + err.Error(),
+				"require_login": true,
+			})
+			return
+		}
+
+		// ✅ Trả về token mới
+		c.JSON(http.StatusOK, gin.H{
+			"message":      "Token refreshed successfully",
+			"access_token": newToken.AccessToken,
+			"expires_at":   newToken.ExpiresAt,
+		})
+		return
+	}
+
+	// 4️⃣ Không có refresh token hoặc lỗi khác
+	c.JSON(http.StatusUnauthorized, gin.H{
+		"error":         "Token invalid, please login again",
+		"require_login": true,
 	})
 }
 

@@ -8,13 +8,15 @@ import (
 )
 
 type MockUserRepository struct {
-	MockCreateUser     func(user *models.User) (*models.User, error)
-	MockGetUserByID    func(id uuid.UUID) (*models.User, error)
-	MockGetUserByEmail func(email string) (*models.User, error)
-	MockLoginPassword  func(email string, password string, provider string) (*models.User, error)
-	MockUpdateUser     func(user *models.User) error
-	MockDeleteUser     func(id uint) error
-	MockGetAllUsers    func() ([]models.User, error)
+	MockCreateUser          func(user *models.User) (*models.User, error)
+	MockGetUserByID         func(id uuid.UUID) (*models.User, error)
+	MockGetUserByEmail      func(email string) (*models.User, error)
+	MockLoginPassword       func(email string, password string, provider string) (*models.User, error)
+	MockUpdateUser          func(user *models.User) error
+	MockDeleteUser          func(id uint) error
+	MockGetAllUsers         func() ([]models.User, error)
+	MockFindUserWithFriends func(email string, user_id uuid.UUID) (*models.User, string, error)
+	MockGetUserByAccesToken func(accessToken string) (*models.User, error)
 }
 
 // Implement interface UserRepository ↓↓↓
@@ -64,6 +66,19 @@ func (m *MockUserRepository) DeleteUser(id uint) error {
 func (m *MockUserRepository) GetAllUsers() ([]models.User, error) {
 	if m.MockGetAllUsers != nil {
 		return m.MockGetAllUsers()
+	}
+	return nil, nil
+}
+
+func (m *MockUserRepository) FindUserWithStatusFriend(email string, user_id uuid.UUID) (*models.User, string, error) {
+	if m.MockFindUserWithFriends != nil {
+		return m.MockFindUserWithFriends(email, user_id)
+	}
+	return nil, "", nil
+}
+func (m *MockUserRepository) GetUserByAccesToken(accessToken string) (*models.User, error) {
+	if m.MockGetUserByAccesToken != nil {
+		return m.MockGetUserByAccesToken(accessToken)
 	}
 	return nil, nil
 }

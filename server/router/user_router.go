@@ -7,7 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func UserRouter(r *gin.Engine, authHandler *handler.AuthHandler, authMiddleware *middleware.AuthMiddleware) {
+func UserRouter(r *gin.Engine, authHandler *handler.AuthHandler,
+	authMiddleware *middleware.AuthMiddleware,
+	userHanlder *handler.UserHandler) {
 
 	v1 := r.Group("/api/v1")
 	{
@@ -18,12 +20,14 @@ func UserRouter(r *gin.Engine, authHandler *handler.AuthHandler, authMiddleware 
 			auth.POST("/register", authHandler.Register)
 			auth.POST("/forgot-password", authHandler.ForgotPassword)
 			auth.POST("/reset-password", authHandler.ResetPassword)
+			auth.GET("/refresh-token", authHandler.AuthRefreshToken)
 		}
 
 		// for user
 		users := v1.Group("/users", authMiddleware.VerifyAccessToken)
 		{
-			users.GET("/search", handler.FindUserByEmail)
+			users.GET("/search", userHanlder.FindUserWithStatusFriends)
 		}
+		
 	}
 }

@@ -12,5 +12,6 @@ func AuthRouter(r *gin.Engine, authHandler *handler.AuthHandler, authMiddleware 
 	{
 		protected.GET("/auth-me", authHandler.AuthHandle)
 	}
+	r.GET("/api/refreshtoken", authHandler.AuthHandle)
 
 }

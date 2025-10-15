@@ -20,6 +20,9 @@ func NewRedisRepository() RedisRepository {
 }
 
 func (r *redisRepo) SetToken(token string, user *models.User, ttl time.Duration) error {
+	if ttl == 0 {
+		ttl = time.Hour
+	}
 	data, err := json.Marshal(user)
 	if err != nil {
 		return err

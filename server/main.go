@@ -34,24 +34,25 @@ func main() {
 	tokenRepo := repository.NewTokenRepository()
 	redisRepo := repository.NewRedisRepository()
 	// new service
-	authService := service.NewAuthService(userRepo, deviceRepo, tokenRepo, redisRepo)
-	userService := service.NewUserService(userRepo)
-	//
-	authHandler := handler.NewAuthHandler(userService, authService)
-	authMiddleware := middleware.NewAuthMiddleware(authService)
-	imageHandler := handler.NewImageHandler(authService)
-	authGoogleHandler := handler.NewAuthGoogleHandler(authService, GoogleOAuthConfig)
-
-	authGoogleHandler.InitGoogleOAuth(
+	googleService := service.NewGoogleService(GoogleOAuthConfig)
+	googleService.InitGoogleOAuth(
 		os.Getenv("GOOGLE_CLIENT_ID"),
 		os.Getenv("GOOGLE_CLIENT_SECRET"),
 		os.Getenv("GOOGLE_REDIRECT_URL"),
 	)
+	authService := service.NewAuthService(userRepo, deviceRepo, tokenRepo, redisRepo, googleService.OAuthConfig)
+	userService := service.NewUserService(userRepo)
+	//
+	userHanler := handler.NewUserHandler(userService)
+	authHandler := handler.NewAuthHandler(userService, authService, googleService)
+	authMiddleware := middleware.NewAuthMiddleware(authService)
+	imageHandler := handler.NewImageHandler(authService)
+	authGoogleHandler := handler.NewAuthGoogleHandler(authService, googleService.OAuthConfig)
 
 	hub := websocket.NewHub()
 	go hub.Run()
 	// Khởi tạo Gin router
-	r := router.SetupRouter(hub, authHandler, authMiddleware, imageHandler)
+	r := router.SetupRouter(hub, authHandler, userHanler, authMiddleware, imageHandler)
 	r.GET("api/auth/google", authGoogleHandler.GoogleLoginHandler)
 	r.GET("api/auth/google/callback", authGoogleHandler.GoogleCallBackHandler)
 	// Chạy server trên port 8080

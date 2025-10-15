@@ -18,10 +18,16 @@ type UserRepository interface {
 	UpdateUser(user *models.User) error
 	DeleteUser(id uint) error
 	GetAllUsers() ([]models.User, error)
+	FindUserWithStatusFriend(email string, user_id uuid.UUID) (*models.User, string, error)
+	GetUserByAccesToken(accessToken string) (*models.User, error)
 }
 
 type userRepo struct {
 	db *gorm.DB
+}
+type UserWithStatusFriend struct {
+	User   models.User
+	Status string
 }
 
 func NewUserRepository() UserRepository {
@@ -93,4 +99,35 @@ func (r *userRepo) GetAllUsers() ([]models.User, error) {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (r *userRepo) FindUserWithStatusFriend(email string, user_id uuid.UUID) (*models.User, string, error) {
+	var result UserWithStatusFriend
+	err := r.db.Table("users").
+		Joins("left join friendships on (users.id = friendships.requested_by OR users.id = friendships.friend_id)").
+		Where("users.email = ? and users.id = ?", email, user_id).Scan(&result).Error
+	if err != nil {
+		return nil, "", err
+	}
+
+	if result.User.ID != uuid.Nil {
+		return &result.User, result.Status, nil
+	}
+
+	return nil, "", nil
+}
+
+func (r *userRepo) GetUserByAccesToken(accessToken string) (*models.User, error) {
+	var result models.User
+	err := r.db.Table("users").
+		Select("users.*").
+		Joins("JOIN devices ON devices.user_id = users.id").
+		Joins("JOIN tokens ON tokens.device_id = devices.id").
+		Where("tokens.access_token = ?", accessToken).
+		First(&result).Error
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+
 }

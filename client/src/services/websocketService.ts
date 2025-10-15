@@ -27,7 +27,7 @@ class WebSocketService {
 
         this.socket.onopen = () => {
             console.log("WebSocket connected");
-            this.currentAttempts = 0; // Reset attempts on successful connection
+            this.currentAttempts = 0;
             if (this.onOpen) this.onOpen();
         };
 

@@ -54,7 +54,7 @@ func TestCheckEmail(t *testing.T) {
 			}
 
 			service := &UserService{
-				repo: mockRepo,
+				repoUser: mockRepo,
 			}
 
 			actual, err := service.CheckEmail(tt.email)

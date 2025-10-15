@@ -84,7 +84,7 @@ export default function HomePage() {
   
 
   return (
-    <div className="bg-gray-900 text-gray-200 min-h-screen overflow-x-hidden relative">
+    <div className="chat-scroll bg-gray-900 text-gray-200 min-h-screen overflow-x-hidden relative">
       {/* Floating Gradient Lights */}
       <motion.div
         className="absolute w-[30rem] h-[30rem] bg-blue-500/20 rounded-full blur-3xl top-10 -left-20"
