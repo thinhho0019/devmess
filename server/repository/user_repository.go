@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"log"
 	"project/database"
 	"project/models"
 
@@ -26,8 +27,11 @@ type userRepo struct {
 	db *gorm.DB
 }
 type UserWithStatusFriend struct {
-	User   models.User
-	Status string
+	ID           uuid.UUID `gorm:"column:id"`
+	Name         string    `gorm:"column:name"`
+	Email        string    `gorm:"column:email"`
+	Avatar       string    `gorm:"column:avatar"`
+	StatusFriend string    `gorm:"column:status_friend"`
 }
 
 func NewUserRepository() UserRepository {
@@ -101,19 +105,35 @@ func (r *userRepo) GetAllUsers() ([]models.User, error) {
 	return users, nil
 }
 
-func (r *userRepo) FindUserWithStatusFriend(email string, user_id uuid.UUID) (*models.User, string, error) {
+func (r *userRepo) FindUserWithStatusFriend(email string, userID uuid.UUID) (*models.User, string, error) {
+	log.Printf("[FindUserWithStatusFriend][Repo] Input email: %s, userID: %s", email, userID)
+
 	var result UserWithStatusFriend
-	err := r.db.Table("users").
-		Joins("left join friendships on (users.id = friendships.requested_by OR users.id = friendships.friend_id)").
-		Where("users.email = ? and users.id = ?", email, user_id).Scan(&result).Error
+	err := r.db.Debug().Table("users").
+		Select(`users.*,friendships.status as status_friend`).
+		Joins("LEFT JOIN friendships ON (users.id = friendships.requested_by OR users.id = friendships.friend_id)").
+		Where("users.email = ?", email).
+		Scan(&result).Error
+
 	if err != nil {
+		log.Printf("[FindUserWithStatusFriend][Repo] SQL error: %v", err)
 		return nil, "", err
 	}
 
-	if result.User.ID != uuid.Nil {
-		return &result.User, result.Status, nil
+	log.Printf("[FindUserWithStatusFriend][Repo] Scan result: %+v", result)
+
+	if result.ID != uuid.Nil {
+		log.Printf("[FindUserWithStatusFriend][Repo] User found: ID=%s, Status=%s", result.ID, result.StatusFriend)
+		user := models.User{
+			ID:     result.ID,
+			Name:   result.Name,
+			Email:  result.Email,
+			Avatar: result.Avatar,
+		}
+		return &user, result.StatusFriend, nil
 	}
 
+	log.Printf("[FindUserWithStatusFriend][Repo] User not found for email: %s", email)
 	return nil, "", nil
 }
 

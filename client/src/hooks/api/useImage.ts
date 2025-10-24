@@ -9,10 +9,10 @@ export function useImage(url?: string) {
     if (!url) return;
 
     const img = new Image();
-    img.src = url;
-
+    img.src = `${import.meta.env.VITE_API_URL}/protected?filename=${encodeURIComponent(url)}&token=${localStorage.getItem("access_token") || ""}`;
+    console.log("Loading image from URL:", img.src);
     img.onload = () => {
-      setSrc(url);
+      setSrc(img.src);
       setLoadingImage(false);
     };
 

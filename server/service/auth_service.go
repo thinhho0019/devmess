@@ -225,6 +225,7 @@ func detectDevice(userAgent string) (string, string) {
 func (a *AuthService) VerifyAccessToken(accessToken string) (*models.User, string, error) {
 	// check redis exits token
 	if user, err := a.redisRepo.GetUserByToken(accessToken); err == nil {
+
 		return user, "", nil
 	}
 	user, refreshToken, err := a.tokenRepo.GetUserForAccessToken(accessToken)
@@ -350,7 +351,8 @@ func (a *AuthService) HandleGoogleCallback(code, ip, userAgent string, GoogleOAu
 
 	userInfo.AccessToken = token.AccessToken
 	userInfo.RefreshToken = token.RefreshToken
-	userInfo.ExpiresIn = token.Expiry.Unix()
+	// userInfo.ExpiresIn = token.Expiry.Unix()
+	userInfo.ExpiresIn = time.Now().Add(24 * time.Hour).Unix()
 
 	tokenModel, device, err := a.LoginWithGoogle(&userInfo, ip, userAgent)
 	if err != nil {

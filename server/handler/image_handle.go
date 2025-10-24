@@ -40,6 +40,7 @@ func (h *ImageHandler) ServeImage(c *gin.Context) {
 func (h *ImageHandler) ProtectShowImage(c *gin.Context) {
 	filename := c.Query("filename")
 	token := c.Query("token")
+
 	if token == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Token is required"})
 		return

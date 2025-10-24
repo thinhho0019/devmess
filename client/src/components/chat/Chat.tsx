@@ -7,6 +7,9 @@ import { useChatManager } from "../../hooks/chat/useChatManager";
 import { useEmojiManager } from "../../hooks/chat/useEmojiManager";
 import EmojiBox from "../emoji/emojiBox";
 import { Phone, Video, MoreHorizontal } from "lucide-react";
+import { Avatar } from "../avatar";
+import { PopupProfile } from "../modals/Profile";
+import {  useState } from "react";
 
 const emojis: EmojiData[] = [
     { emoji: "😀", type: "smile", description: "Cười vui vẻ" },
@@ -18,18 +21,19 @@ const emojis: EmojiData[] = [
     { emoji: "🎉", type: "party", description: "Ăn mừng" },
     { emoji: "❤️", type: "heart", description: "Thả tim, yêu thương" },
 ];
-const ramdomUserId = Math.random().toString(36).substring(2, 15);
+const currentUserID = localStorage.getItem("user_id") || "user_001";
 const ChatView: React.FC<ChatProps> = ({
     id,
     name = "thinhho",
     img = "",
     chats = [],
+    userInfor = {},
     is_mobile = false,
-    current_user_id = ramdomUserId // Example current user
+    current_user_id =  currentUserID 
 }) => {
     const { messages, chatContainerRef, sendMessage, addReaction } = useChatManager(chats, current_user_id);
     const { showEmojiPopup, popupPosition, selectedMessageId, messageRefs, openEmojiPopup, closeEmojiPopup } = useEmojiManager();
-
+    const [openProfile, setOpenProfile] = useState(false);
     const handleEmojiSelect = (emoji: EmojiData) => {
         if (selectedMessageId) {
             addReaction(selectedMessageId, emoji);
@@ -43,16 +47,13 @@ const ChatView: React.FC<ChatProps> = ({
             className="p-2 h-full grid"
             style={{ gridTemplateRows: "10% 80% 10%" }}
         >
+            <PopupProfile show={openProfile} user={userInfor} onClose={() => setOpenProfile(prev => !prev)} onAvatarChange={() => { }} />
             <div className="flex items-center justify-between px-4 py-2 bg-gradient-to-r from-gray-900/60 to-gray-800/60 backdrop-blur-lg border-b border-white/10 rounded-xl mb-2 shadow-sm">
                 <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <img
-                            src={img || "https://ui-avatars.com/api/?name=" + name}
-                            alt={name}
-                            className="w-10 h-10 rounded-full border border-gray-700 shadow-md object-cover"
-                        />
-                        {/* Online indicator */}
-                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-gray-900 rounded-full"></span>
+                    <div className="relative" onClick={() => setOpenProfile(prev => !prev)}>
+                        <Avatar src={img} alt={name} online={true} />
+
+
                     </div>
 
                     <div>
@@ -94,13 +95,22 @@ const ChatView: React.FC<ChatProps> = ({
             <div ref={chatContainerRef} className="w-full overflow-y-auto chat-scroll">
                 <div className="h-full flex-col max-w-4xl mx-auto px-6 py-4  ">
                     {messages.map((c, idx) => {
-                        const isCurrentUser = c.user_id === current_user_id;
+                        console.log("Rendering message:", c);
+                        const isCurrentUser = c.sender_id === current_user_id;
                         const bubbleBase = "relative w-fit max-w-[520px] text-sm rounded-2xl px-4 py-3 shadow-lg cursor-pointer transform transition-all";
                         // Muted/darker palettes for a calmer 'fantasy' look
                         const bubbleClasses = isCurrentUser
                             ? `${bubbleBase} bg-gradient-to-br from-slate-800 to-slate-700 text-gray-100 self-end ring-1 ring-black/20`
                             : `${bubbleBase} bg-gradient-to-br from-indigo-900 to-indigo-800 text-gray-100 self-start ring-1 ring-black/20`;
-
+                        if (c.type === 'system') {
+                            return (
+                                <div key={c.id} className="flex justify-center my-4">
+                                    <div className="bg-gray-600 text-white text-xs px-3 py-1 rounded-full shadow-md">
+                                        {c.content}
+                                    </div>
+                                </div>
+                            );
+                        }
                         return (
                             <div key={c.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} py-1`}>
                                 <div className="relative">
@@ -113,7 +123,7 @@ const ChatView: React.FC<ChatProps> = ({
                                         className={bubbleClasses}
                                     >
                                         {/* tail removed as requested */}
-                                        <div className="text-[15px] leading-relaxed tracking-wide font-medium">{c.message}</div>
+                                        <div className="text-[15px] leading-relaxed tracking-wide font-medium">{c.content}</div>
                                         <div className="mt-2">
                                             <EmojiBox emojis={c.reactions} onSelect={(emoji) => addReaction(c.id, emoji)} />
                                         </div>

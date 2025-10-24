@@ -11,12 +11,14 @@ import (
 
 type FriendshipRepository interface {
 	CreateFriendship(f *models.Friendship) (*models.Friendship, error)
+	SaveFriendship(f *models.Friendship) (*models.Friendship, error)
 	GetByID(id uuid.UUID) (*models.Friendship, error)
 	GetFriendship(userID, friendID uuid.UUID) (*models.Friendship, error)
 	ListFriends(userID uuid.UUID, status string) ([]models.Friendship, error)
 	ListPendingRequests(userID uuid.UUID) ([]models.Friendship, error)
 	UpdateFriendship(f *models.Friendship) (*models.Friendship, error)
 	DeleteFriendship(id uuid.UUID) error
+	ChangeStatus(id uuid.UUID, newStatus string) error
 	AreFriends(userID, friendID uuid.UUID) (bool, error)
 	GetFriendshipBetweenUsers(userID uuid.UUID, friendID uuid.UUID) (*models.Friendship, error)
 }
@@ -31,9 +33,34 @@ func NewFriendshipRepository() FriendshipRepository {
 	}
 }
 
+func (r *friendshipRepository) SaveFriendship(f *models.Friendship) (*models.Friendship, error) {
+	if f == nil {
+		return nil, errors.New("friendship is nil")
+	}
+	if err := r.db.Unscoped().Save(f).Error; err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (r *friendshipRepository) ChangeStatus(id uuid.UUID, newStatus string) error {
+	var f models.Friendship
+	if err := r.db.First(&f, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("friendship not found")
+		}
+		return err
+	}
+	f.Status = newStatus
+	if err := r.db.Save(&f).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *friendshipRepository) GetFriendshipBetweenUsers(userID uuid.UUID, friendID uuid.UUID) (*models.Friendship, error) {
 	var f models.Friendship
-	err := r.db.
+	err := r.db.Unscoped().
 		Where("(user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)", userID, friendID, friendID, userID).
 		Preload("User").
 		Preload("Friend").
@@ -92,10 +119,11 @@ func (r *friendshipRepository) GetFriendship(userID, friendID uuid.UUID) (*model
 
 func (r *friendshipRepository) ListFriends(userID uuid.UUID, status string) ([]models.Friendship, error) {
 	var list []models.Friendship
-	query := r.db.Preload("Friend").Where("user_id = ?", userID)
+	query := r.db.Unscoped().Preload("Friend").Preload("User").Where("user_id = ? or friend_id = ?", userID, userID)
 	if status != "" {
 		query = query.Where("status = ?", status)
 	}
+
 	if err := query.Find(&list).Error; err != nil {
 		return nil, err
 	}
@@ -105,7 +133,8 @@ func (r *friendshipRepository) ListFriends(userID uuid.UUID, status string) ([]m
 func (r *friendshipRepository) ListPendingRequests(userID uuid.UUID) ([]models.Friendship, error) {
 	var list []models.Friendship
 	// pending requests received by user (friend_id = userID and status = 'pending')
-	if err := r.db.Preload("User").Where("friend_id = ? AND status = ?", userID, "pending").Find(&list).Error; err != nil {
+	if err := r.db.Preload("User").Preload("Friend").
+		Where("(friend_id = ? or user_id = ?) AND status = ? And requested_by<>?", userID, userID, "pending", userID).Find(&list).Error; err != nil {
 		return nil, err
 	}
 	return list, nil
@@ -123,7 +152,7 @@ func (r *friendshipRepository) UpdateFriendship(f *models.Friendship) (*models.F
 }
 
 func (r *friendshipRepository) DeleteFriendship(id uuid.UUID) error {
-	if err := r.db.Delete(&models.Friendship{}, "id = ?", id).Error; err != nil {
+	if err := r.db.Unscoped().Delete(&models.Friendship{}, "id = ?", id).Error; err != nil {
 		return err
 	}
 	return nil

@@ -1,23 +1,37 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type { Chat, MessageReaction, EmojiData } from '../../components/chat/types';
+import type {   MessageReaction, EmojiData } from '../../components/chat/types';
 import { getTimeIsoCurrent } from '../../utils/date';
 import { MessageType, MessageStatus } from '../../components/chat/types';
 import { useSocket } from '../socket/useSocket';
+import { fetchMessages, SendMessage } from '../../api/message';
+import { useParams } from 'react-router-dom';
+import type { Messages } from '../../pages/HomeChat';
 
-export const useChatManager = (initialChats: Chat[], currentUserId: string) => {
-    const [messages, setMessages] = useState<Chat[]>(initialChats);
+export const useChatManager = (initialChats: Messages[], currentUserId: string) => {
+    console.log("Current User ID in useChatManager:", currentUserId);
+    console.log("Initial Chats in useChatManager:", initialChats);
+    const [messages, setMessages] = useState<Messages[]>(initialChats);
+    const { conversation_id } = useParams<{ conversation_id: string }>();
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const { lastMessage, sendMessage: sendSocketMessage } = useSocket();
     // Listen for incoming messages from WebSocket
     useEffect(() => {
+        console.log("Current messages in useChatManager:", messages);
+        console.log("Conversation ID in useChatManager:", conversation_id);
+        if (messages.length == 0 && conversation_id) {
+            // load message for this conversation if needed
+            fetchMessages(conversation_id, 50, new Date()).then((data) => {
+                console.log("Messages data for chat", conversation_id, ":", data);
+                setMessages(data);
+            });
+        }
         if (lastMessage !== null) {
             try {
                 const eventData = JSON.parse(lastMessage.data);
-
                 switch (eventData.type) {
                     case 'new_message': {
-                        const newMessage: Chat = eventData.payload;
+                        const newMessage: Messages = eventData.payload;
                         if (newMessage && newMessage.id && !messages.some(msg => msg.id === newMessage.id)) {
                             setMessages(prev => [...prev, newMessage]);
                         }
@@ -41,6 +55,12 @@ export const useChatManager = (initialChats: Chat[], currentUserId: string) => {
                         );
                         break;
                     }
+                    case 'receive_message':{
+                        console.log("Received 'receive_message' event:", eventData);
+                        const messsage:Messages = eventData.message;
+                        setMessages((prev) => [...prev, messsage]);
+                        break;
+                    }
                     default:
                         // Handle legacy format or other message types
                         if (eventData && eventData.id && eventData.message) {
@@ -54,7 +74,7 @@ export const useChatManager = (initialChats: Chat[], currentUserId: string) => {
                 console.log("Received non-JSON or malformed data:", lastMessage.data);
             }
         }
-    }, [lastMessage, messages]);
+    }, [lastMessage,conversation_id]);
 
 
     useEffect(() => {
@@ -64,13 +84,14 @@ export const useChatManager = (initialChats: Chat[], currentUserId: string) => {
     }, [messages]);
 
     const sendMessage = useCallback((text: string, file: File | null = null) => {
+
         if (!text.trim() && !file) return;
         console.log(currentUserId);
-        const newMessage: Chat = {
+        const newMessage: Messages = {
             id: `msg_${uuidv4()}`,
-            message: text,
+            content: text,
             created_at: getTimeIsoCurrent(),
-            user_id: currentUserId,
+            sender_id: currentUserId,
             type: file ? MessageType.FILE : MessageType.TEXT,
             status: MessageStatus.SENDING, // Set status to sending
             attachments: file ? [{
@@ -80,20 +101,35 @@ export const useChatManager = (initialChats: Chat[], currentUserId: string) => {
                 type: file.type,
                 size: file.size
             }] : undefined,
+            conversation_id: '',
+            is_edited: false,
+            deleted: false,
+            updated_at: '',
         };
-        
+
         const messagePayload = {
             type: 'new_message',
             payload: newMessage
         };
-
+        if (!conversation_id) {
+            console.error('Conversation ID is missing. Cannot send message.');
+            return;
+        }
+        SendMessage({
+            content: text,
+            conversation_id: conversation_id, // Replace with actual conversation ID
+        }).then((res) => {
+            console.log('Message sent successfully:', res);
+        }).catch((error) => {
+            console.error('Error sending message:', error);
+        });
         // Optimistically update the UI
         setMessages(prev => [...prev, newMessage]);
 
         // Send the message via WebSocket
         sendSocketMessage(JSON.stringify(messagePayload));
 
-    }, [currentUserId, sendSocketMessage]);
+    }, [currentUserId, sendSocketMessage, conversation_id]);
 
     const addReaction = useCallback((messageId: string, emoji: EmojiData | MessageReaction) => {
         const reactionPayload = {
@@ -120,9 +156,9 @@ export const useChatManager = (initialChats: Chat[], currentUserId: string) => {
                             existingReaction.user_ids.push(currentUserId);
                         } else {
                             existingReaction.count--;
-                            existingReaction.user_ids = existingReaction.user_ids.filter(uid => uid !== currentUserId);
+                            // existingReaction.user_ids = existingReaction.user_ids.filter(sender_id => uid !== currentUserId);
                         }
-                        
+
                         if (existingReaction.count > 0) {
                             newReactions[reactionIndex] = existingReaction;
                         } else {

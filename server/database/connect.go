@@ -34,15 +34,24 @@ func ConnectDB() {
 	if err != nil {
 		log.Fatalf("❌ Không thể kết nối database: %v", err)
 	}
-
+	if os.Getenv("RESET_DB") == "true" {
+		err := ResetDatabase(db)
+		if err != nil {
+			log.Fatalf("❌ Lỗi auto migrate: %v", err)
+		}
+		DB = db
+		log.Println("✅ Database đã được reset thành công!")
+		return
+	}
 	// 3️⃣ Auto migrate
 	err = db.AutoMigrate(
 		&models.User{},
 		&models.Token{},
 		&models.Device{},
-		&models.Message{},
 		&models.Conversation{},
-		&models.ConversationMember{},
+		&models.Participant{},
+		&models.Message{},
+		// &models.ConversationMember{},
 		&models.Friendship{},
 	)
 	if err != nil {
@@ -54,7 +63,28 @@ func ConnectDB() {
 
 	DB = db
 }
+func ResetDatabase(db *gorm.DB) error {
+	db.Exec("DROP SCHEMA public CASCADE;")
+	db.Exec("CREATE SCHEMA public;")
+	err := db.AutoMigrate(
+		&models.User{},
+		&models.Token{},
+		&models.Device{},
+		&models.Conversation{},
+		&models.Participant{},
+		&models.Message{},
 
+		// &models.Message{},
+		// &models.Conversation{},
+		// &models.Participant{},
+		// &models.ConversationMember{},
+		&models.Friendship{},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func CreateDBIfNotExists() {
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")

@@ -1,0 +1,1 @@
+export { PopupFriendsManager, type FriendStatus } from './FriendsManager';

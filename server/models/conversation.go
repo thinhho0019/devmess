@@ -4,16 +4,21 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Conversation struct {
-	ID         uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
-	Name       string    `gorm:"size:100" json:"name"`
-	IsGroup    bool      `gorm:"default:false" json:"is_group"`
-	CreatedBy  uuid.UUID `gorm:"type:uuid" json:"created_by"`
-	CreatedAt  time.Time `json:"created_at"`
+	ID            uuid.UUID  `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	Type          string     `json:"type" gorm:"type:varchar(20);not null;default:'direct'"`
+	Name          string     `json:"name" gorm:"type:varchar(255)"`
+	Description   string     `json:"description,omitempty" gorm:"type:text"`
+	Avatar        string     `json:"avatar,omitempty" gorm:"type:varchar(500)"`
+	LastMessageID *uuid.UUID `json:"last_message_id" gorm:"type:uuid;index"`
 
-	// Relationships
-	Members  []ConversationMember `gorm:"foreignKey:ConversationID" json:"members"`
-	Messages []Message            `gorm:"foreignKey:ConversationID" json:"messages"`
+	CreatedAt time.Time      `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
+	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
+
+	LastMessage  *Message       `json:"last_message,omitempty" gorm:"foreignKey:LastMessageID"`
+	Participants []*Participant `json:"participants,omitempty" gorm:"foreignKey:ConversationID;constraint:OnDelete:CASCADE"`
 }

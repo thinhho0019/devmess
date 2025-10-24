@@ -17,7 +17,7 @@ type ClientLimiter struct {
 var (
 	mu        sync.Mutex
 	clients   = make(map[string]*ClientLimiter)
-	rateLimit = rate.Every(200 * time.Millisecond) // ~5 req/s
+	rateLimit = rate.Every(10 * time.Millisecond) // ~5 req/s
 	burst     = 5
 )
 

@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"project/models"
 
@@ -18,41 +20,62 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 }
 
 func (h *UserHandler) FindUserWithStatusFriends(c *gin.Context) {
+	// Lấy query params
 	email := c.Query("email")
-	user_id := c.Query("user_id")
+	if email == "" {
+		log.Println("[FindUserWithStatusFriends] Missing email query parameter")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email   query parameter is required"})
+		return
+	}
+
+	// Lấy user từ context
 	userValue, exists := c.Get("user")
 	if !exists {
+		log.Println("[FindUserWithStatusFriends] User not found in context")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found in context"})
 		return
 	}
+
 	user, ok := userValue.(*models.User)
 	if !ok {
+		log.Printf("[FindUserWithStatusFriends] Invalid user type: %T", userValue)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user type"})
 		return
 	}
+
+	log.Printf("[FindUserWithStatusFriends] Authenticated user: %s (%s)", user.Name, user.Email)
+
+	// Check không search chính mình
 	if user.Email == email {
+		log.Printf("[FindUserWithStatusFriends] User tried to search themselves: %s", email)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot search for yourself"})
 		return
 	}
-	if email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email or UserID query parameter is required"})
-		return
-	}
-	// service check email and status friends
-	result, err := h.userService.FindUserWithStatusFriend(email, user_id)
+
+	// Check email rỗng
+
+	// Call service
+	result, err := h.userService.FindUserWithStatusFriend(email, user.ID.String())
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Error find user :" + err.Error()})
+		log.Printf("[FindUserWithStatusFriends] Error finding user: %v", err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Error finding user: " + err.Error()})
 		return
 	}
+
+	// Response
 	if result != nil {
-		c.JSON(http.StatusAccepted, result)
+		log.Printf("[FindUserWithStatusFriends] User found: %+v", result)
+		c.JSON(http.StatusOK, result)
 		return
 	}
+
+	log.Printf("[FindUserWithStatusFriends] User not found for email: %s", email)
 	c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 }
 
 func (h *UserHandler) FindUserByEmail(c *gin.Context) {
 	email := c.Query("email")
+	fmt.Println("email user find:" + email)
 	userValue, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found in context"})

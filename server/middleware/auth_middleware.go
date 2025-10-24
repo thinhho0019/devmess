@@ -23,12 +23,14 @@ func (m *AuthMiddleware) VerifyAccessToken(c *gin.Context) {
 
 	if authHeader == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing Authorization header"})
+		c.Abort()
 		return
 	}
 	// "Bearer <token>"
 	parts := strings.Split(authHeader, " ")
 	if len(parts) != 2 || parts[0] != "Bearer" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Authorization format"})
+		c.Abort()
 		return
 	}
 	accessToken := parts[1]

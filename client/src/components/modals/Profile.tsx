@@ -1,16 +1,20 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useRef } from "react";
-import { Camera } from "lucide-react";
+import { Camera, LogOut } from "lucide-react";
 import type { UserResponse } from "../../types/UserResponse";
+import { Avatar } from "../avatar";
+import { useImage } from "../../hooks/api/useImage";
+import { logout } from "../../utils/Auth";
 
-export const PopupProfile = ({ show, onClose, user, onAvatarChange }: {
+export const PopupProfile = ({ show, onClose, user, is_profile_owner, onAvatarChange }: {
     show: boolean;
     onClose: () => void;
     user?: UserResponse;
+    is_profile_owner?: boolean;
     onAvatarChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) => {
   const fileRef = useRef<HTMLInputElement | null>(null);
-
+  const {src} = useImage(user?.avatar || "");
   return (
     <AnimatePresence>
       {show && (
@@ -32,11 +36,7 @@ export const PopupProfile = ({ show, onClose, user, onAvatarChange }: {
             {/* Avatar */}
             <div className="flex flex-col items-center gap-4">
               <div className="relative group">
-                <img
-                  src={user?.avatar || "https://ui-avatars.com/api/?name=User&background=111827&color=fff"}
-                  alt="avatar"
-                  className="w-28 h-28 rounded-full object-cover border-4 border-white/10 shadow-lg"
-                />
+                <Avatar src={src || undefined} size="md" online={false} />
                 <button
                   onClick={() => fileRef.current?.click()}
                   className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 rounded-full transition"
@@ -66,12 +66,23 @@ export const PopupProfile = ({ show, onClose, user, onAvatarChange }: {
                 >
                   Close
                 </button>
-                <button
+               {is_profile_owner && (<button
+                  onClick={() => {
+                    // Clear auth and reload app; close modal first for immediate UI feedback
+                    onClose();
+                    logout(true);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-medium transition flex items-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Đăng xuất
+                </button>)}
+                {/* <button
                   onClick={() => alert("Saved!")}
                   className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition"
                 >
                   Save
-                </button>
+                </button> */}
               </div>
             </div>
           </motion.div>

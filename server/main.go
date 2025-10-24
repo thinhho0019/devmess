@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"project/database"
@@ -15,25 +16,39 @@ import (
 
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
-	// import Gin
 )
 
 func main() {
+	// Load environment variables
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("⚠️ Không tìm thấy file .env hoặc không load được:", err)
 	} else {
 		fmt.Println("✅ Đã load file .env thành công!")
 	}
+
+	// Initialize database connections
 	database.ConnectDB()
 	database.InitRedis()
+
+	// Defer cleanup operations
+	defer func() {
+		database.CloseRedis()
+		fmt.Println("✅ Đã đóng kết nối Redis")
+	}()
+
 	var GoogleOAuthConfig *oauth2.Config
-	// new repo
+
+	// Initialize repositories
 	userRepo := repository.NewUserRepository()
 	deviceRepo := repository.NewDeviceRepository()
 	tokenRepo := repository.NewTokenRepository()
 	redisRepo := repository.NewRedisRepository()
-	// new service
+	friendRepo := repository.NewFriendshipRepository()
+	conversationRepo := repository.NewConversationRepository()
+	participantRepo := repository.NewParticipantRepository()
+	messageRepo := repository.NewMessageRepository()
+	// Initialize services
 	googleService := service.NewGoogleService(GoogleOAuthConfig)
 	googleService.InitGoogleOAuth(
 		os.Getenv("GOOGLE_CLIENT_ID"),
@@ -42,24 +57,56 @@ func main() {
 	)
 	authService := service.NewAuthService(userRepo, deviceRepo, tokenRepo, redisRepo, googleService.OAuthConfig)
 	userService := service.NewUserService(userRepo)
-	//
-	userHanler := handler.NewUserHandler(userService)
+	conversationService := service.NewConversationService(conversationRepo, participantRepo, messageRepo)
+	messageService := service.NewMessageService(messageRepo)
+	friendService := service.NewInitFriendService(friendRepo, userRepo)
+	participantService := service.NewParticipantService(participantRepo, redisRepo)
+	// Initialize WebSocket hub
+	hub := websocket.NewHub()
+	wsHandler := websocket.NewWsHandler(hub, authService)
+	// Initialize handlers
+	userHandler := handler.NewUserHandler(userService)
+
 	authHandler := handler.NewAuthHandler(userService, authService, googleService)
-	authMiddleware := middleware.NewAuthMiddleware(authService)
+	friendHandler := handler.NewFriendHandler(friendService, hub, conversationService)
+	conversationHandler := handler.NewConversationHandler(conversationService)
 	imageHandler := handler.NewImageHandler(authService)
 	authGoogleHandler := handler.NewAuthGoogleHandler(authService, googleService.OAuthConfig)
+	messageHandler := handler.NewMessageHandler(*messageService, hub, *participantService)
+	// Initialize middleware
+	authMiddleware := middleware.NewAuthMiddleware(authService)
 
-	hub := websocket.NewHub()
 	go hub.Run()
-	// Khởi tạo Gin router
-	r := router.SetupRouter(hub, authHandler, userHanler, authMiddleware, imageHandler)
-	r.GET("api/auth/google", authGoogleHandler.GoogleLoginHandler)
-	r.GET("api/auth/google/callback", authGoogleHandler.GoogleCallBackHandler)
-	// Chạy server trên port 8080
+
+	// Setup router với tất cả handlers
+	r := router.SetupRouter(
+		hub,
+		authHandler,
+		userHandler,
+		authMiddleware,
+		friendHandler,
+		wsHandler,
+
+		authService,
+		imageHandler,
+		conversationHandler,
+		messageHandler,
+	)
+
+	// Google OAuth routes
+	r.GET("/api/auth/google", authGoogleHandler.GoogleLoginHandler)
+	r.GET("/api/auth/google/callback", authGoogleHandler.GoogleCallBackHandler)
+
+	// Start server
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	r.Run(":" + port)
-	defer database.CloseRedis()
+
+	fmt.Printf("🚀 Server đang chạy trên port %s\n", port)
+	fmt.Printf("📡 WebSocket hub đã được khởi động\n")
+
+	if err := r.Run(":" + port); err != nil {
+		log.Fatal("❌ Không thể khởi động server:", err)
+	}
 }

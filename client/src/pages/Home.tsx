@@ -1,4 +1,4 @@
-import { FiArrowRight, FiLock, FiZap, FiSmartphone } from "react-icons/fi";
+import { FiArrowRight, FiLock, FiZap, FiSmartphone, FiMessageCircle, FiUsers, FiShield } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
@@ -79,6 +79,54 @@ const TestimonialCard = ({ quote, name, role, avatar, index }: TestimonialCardPr
   </motion.div>
 );
 
+interface StepCardProps {
+  step: number;
+  icon: React.ReactNode;
+  title: React.ReactNode;
+  description: React.ReactNode;
+  index?: number;
+}
+
+const StepCard = ({ step, icon, title, description, index }: StepCardProps) => (
+  <motion.div
+    variants={fadeInUp}
+    initial="hidden"
+    whileInView="visible"
+    viewport={{ once: true, amount: 0.3 }}
+    custom={index}
+    className="relative bg-gradient-to-br from-gray-800/60 to-gray-900/60 p-8 rounded-2xl border border-gray-700/50 hover:border-blue-500/40 transition-all duration-300 backdrop-blur-sm group"
+  >
+    {/* Step number */}
+    <motion.div
+      whileHover={{ scale: 1.1, rotate: 5 }}
+      transition={{ type: "spring", stiffness: 200 }}
+      className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg"
+    >
+      {step}
+    </motion.div>
+
+    {/* Icon */}
+    <motion.div
+      whileHover={{ scale: 1.1, y: -5 }}
+      transition={{ type: "spring", stiffness: 200 }}
+      className="inline-block p-4 bg-blue-500/10 rounded-full mb-6 ring-2 ring-blue-500/20 group-hover:ring-blue-400/40"
+    >
+      {icon}
+    </motion.div>
+
+    {/* Content */}
+    <h4 className="text-xl font-semibold mb-3 text-white group-hover:text-blue-300 transition-colors">
+      {title}
+    </h4>
+    <p className="text-gray-400 leading-relaxed">
+      {description}
+    </p>
+
+    {/* Connecting line for desktop */}
+    <div className="hidden lg:block absolute top-1/2 -right-8 w-16 h-px bg-gradient-to-r from-blue-500/50 to-transparent"></div>
+  </motion.div>
+);
+
 export default function HomePage() {
   const { t } = useTranslation();
   
@@ -155,6 +203,121 @@ export default function HomePage() {
           <FeatureCard index={0} icon={<FiLock className="w-8 h-8 text-blue-400" />} title={t("feature_encryption_title")}>{t("feature_encryption_desc")}</FeatureCard>
           <FeatureCard index={1} icon={<FiZap className="w-8 h-8 text-blue-400" />} title={t("feature_fast_title")}>{t("feature_fast_desc")}</FeatureCard>
           <FeatureCard index={2} icon={<FiSmartphone className="w-8 h-8 text-blue-400" />} title={t("feature_modern_title")}>{t("feature_modern_desc")}</FeatureCard>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section id="how-it-works" className="relative py-20 z-10">
+        <div className="container mx-auto px-6">
+          {/* Section Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-20"
+          >
+            <h3 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              {t("how_it_works")}
+            </h3>
+            <p className="text-gray-400 text-lg max-w-3xl mx-auto">
+              {t("how_it_works_subtitle")}
+            </p>
+          </motion.div>
+
+          {/* Steps Grid */}
+          <div className="grid lg:grid-cols-3 gap-8 lg:gap-12 max-w-6xl mx-auto">
+            <StepCard
+              index={0}
+              step={1}
+              icon={<FiUsers className="w-8 h-8 text-blue-400" />}
+              title={t("step1_title")}
+              description={t("step1_desc")}
+            />
+            <StepCard
+              index={1}
+              step={2}
+              icon={<FiMessageCircle className="w-8 h-8 text-blue-400" />}
+              title={t("step2_title")}
+              description={t("step2_desc")}
+            />
+            <StepCard
+              index={2}
+              step={3}
+              icon={<FiShield className="w-8 h-8 text-blue-400" />}
+              title={t("step3_title")}
+              description={t("step3_desc")}
+            />
+          </div>
+
+          {/* Demo Video/Animation Area */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="mt-20 text-center"
+          >
+            <div className="relative bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-3xl p-8 border border-gray-700/50 backdrop-blur-sm max-w-4xl mx-auto">
+              {/* Mockup Chat Interface */}
+              <div className="bg-gray-900/80 rounded-2xl p-6 border border-gray-700/30">
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-700/50">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  </div>
+                  <h4 className="text-white font-semibold">{t("chat_demo_title")}</h4>
+                  <div className="w-16"></div>
+                </div>
+                
+                {/* Chat Messages */}
+                <div className="space-y-4">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1, duration: 0.5 }}
+                    className="flex items-start space-x-3"
+                  >
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                      A
+                    </div>
+                    <div className="bg-gray-700/50 rounded-lg px-4 py-2 max-w-xs">
+                      <p className="text-white text-sm">{t("demo_message1")}</p>
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1.5, duration: 0.5 }}
+                    className="flex items-start space-x-3 justify-end"
+                  >
+                    <div className="bg-blue-600 rounded-lg px-4 py-2 max-w-xs">
+                      <p className="text-white text-sm">{t("demo_message2")}</p>
+                    </div>
+                    <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                      B
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 2, duration: 0.5 }}
+                    className="flex items-start space-x-3"
+                  >
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                      A
+                    </div>
+                    <div className="bg-gray-700/50 rounded-lg px-4 py-2 max-w-xs">
+                      <p className="text-white text-sm">{t("demo_message3")}</p>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 

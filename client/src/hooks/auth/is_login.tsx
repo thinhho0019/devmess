@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { UserResponse } from "../../types/UserResponse";
-
-
+import api from "../../api/api";
 
 export function useAuth(requireAuth = false) {
     const [user, setUser] = useState<UserResponse | null>(null);
@@ -18,62 +17,53 @@ export function useAuth(requireAuth = false) {
             setLoading(false);
             return;
         }
-        const fetchRefreshToken = async (token: string) => {
-            try {
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/refresh`, {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    const { access_token } = data;
-                    localStorage.setItem("access_token", access_token);
-                    return access_token;
-                } else {
-                    throw new Error("Failed to refresh token");
-                }
-            } catch (error) {
-                console.error("❌ Error refreshing token:", error);
-            }
-        };
 
-        // 🔹 Gọi API /auth-me để xác thực
+        // 🔹 Gọi API /auth-me để xác thực (sử dụng axios với interceptors)
         const checkAuth = async () => {
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/auth-me`, {
-                    headers: {
-                        "Authorization": `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-
-                    // Xử lý khi token hết hạn hoặc không hợp lệ
-                    if (response.status === 401 && errorData.error === "Access token expired or invalid") {
-                        // refresh token
-                        const newToken = await fetchRefreshToken(token);
-                        if (newToken) {
-                            // Thử gọi lại /auth-me với token mới
-                            localStorage.setItem("access_token", newToken);
-                            return checkAuth(); // Gọi lại hàm checkAuth với token mới
-                        }
-                    }
-
-                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                 
+                const response = await api.get('/auth-me');
+                 
+                
+                // Kiểm tra nếu response không phải JSON
+                if (typeof response.data === 'string' && response.data.includes('<html>')) {
+                    throw new Error("Server returned HTML instead of JSON - check API endpoint");
                 }
-
-                const data: UserResponse = await response.json();
-                console.log("✅ Auth check successful:", data);
+                
+                const data: UserResponse = response.data;
+                console.log("✅ Parsed user data:", data);
+                
+                // Lưu thông tin user vào localStorage
+                if (data) {
+                    localStorage.setItem("email", data.email || "");
+                    localStorage.setItem("name", data.name || "");
+                    localStorage.setItem("avatar", data.avatar || "");
+                    localStorage.setItem("createdAt", data.createdAt || "");
+                    localStorage.setItem("updatedAt", data.updatedAt || "");
+                    // ID có thể hữu ích cho các API calls khác
+                    if (data.id) localStorage.setItem("user_id", data.id.toString());
+                }
+                
                 setUser(data);
-            } catch (err) {
+            // eslint-disable-next-line
+            } catch (err: any) {
                 console.error("❌ Auth check failed:", err);
+                console.error("❌ Error response:", err.response);
+                console.error("❌ Error config:", err.config);
+                
+                // Cleanup tất cả thông tin user khỏi localStorage
                 localStorage.removeItem("access_token");
-                if (requireAuth) navigate("/l");
+                localStorage.removeItem("email");
+                localStorage.removeItem("name");
+                localStorage.removeItem("avatar");
+                localStorage.removeItem("createdAt");
+                localStorage.removeItem("updatedAt");
+                localStorage.removeItem("user_id");
+                
+                // Interceptor đã xử lý refresh token và redirect nếu thất bại
+                if (requireAuth && err.response?.status === 401) {
+                    navigate("/l");
+                }
             } finally {
                 setLoading(false);
             }
@@ -81,5 +71,6 @@ export function useAuth(requireAuth = false) {
 
         checkAuth();
     }, [requireAuth, navigate]);
+    
     return { user, loading, isAuthenticated: !!user };
 }

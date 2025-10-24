@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"project/models"
 	"project/repository"
 
@@ -72,20 +73,44 @@ func (s *UserService) LoginPassword(email string, password string) (*models.User
 	return user, nil
 }
 
-func (s *UserService) FindUserWithStatusFriend(email string, user_id string) (map[string]interface{}, error) {
-	// convert user_id to uuid
-	uuid_user_id, err := utils.StringToUUID(user_id)
+func (s *UserService) FindUserWithStatusFriend(email string, userID string) (map[string]interface{}, error) {
+	log.Printf("[FindUserWithStatusFriend] Input email: %s, userID: %s", email, userID)
+
+	// Convert user_id sang uuid
+	uuidUserID, err := utils.StringToUUID(userID)
 	if err != nil {
+		log.Printf("[FindUserWithStatusFriend] Invalid userID: %v", err)
 		return nil, err
 	}
-	user, status, err := s.repoUser.FindUserWithStatusFriend(email, uuid_user_id)
-	if user != nil {
-		//convert to map
-		var userMap map[string]interface{}
-		data, _ := json.Marshal(user)
-		json.Unmarshal(data, &userMap)
-		userMap["status"] = status
-		return userMap, nil
+	log.Printf("[FindUserWithStatusFriend] Converted userID to UUID: %s", uuidUserID)
+
+	// Gọi repo để lấy user + status
+	user, status, err := s.repoUser.FindUserWithStatusFriend(email, uuidUserID)
+	if err != nil {
+		log.Printf("[FindUserWithStatusFriend] Repo error: %v", err)
+		return nil, err
 	}
-	return nil, err
+
+	if user == nil {
+		log.Printf("[FindUserWithStatusFriend] User not found for email: %s", email)
+		return nil, nil
+	}
+
+	// Chuyển user sang map và thêm status
+	userMap := make(map[string]interface{})
+	data, err := json.Marshal(user)
+	if err != nil {
+		log.Printf("[FindUserWithStatusFriend] Error marshaling user: %v", err)
+		return nil, err
+	}
+
+	if err := json.Unmarshal(data, &userMap); err != nil {
+		log.Printf("[FindUserWithStatusFriend] Error unmarshaling to map: %v", err)
+		return nil, err
+	}
+
+	userMap["status"] = status
+	log.Printf("[FindUserWithStatusFriend] Result userMap: %+v", userMap)
+
+	return userMap, nil
 }

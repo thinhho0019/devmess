@@ -1,3 +1,6 @@
+import type { Messages } from "../../pages/HomeChat";
+import type { UserResponse } from "../../types/UserResponse";
+
 // Type constants thay vì enum
 export const MessageType = {
   TEXT: 'text',
@@ -66,7 +69,7 @@ export interface Chat {
   // Message metadata
   type?: MessageTypeValue;
   status?: MessageStatusValue;
-  
+  content?: string; // for system messages
   // Content enhancements
   attachments?: ChatAttachment[];
   reactions?: MessageReaction[];
@@ -121,7 +124,33 @@ export interface ChatUser {
     desktop_notifications?: boolean;
   };
 }
-
+// interface User {
+//   id: string;
+//   name: string;
+//   email: string;
+//   avatar: string;
+//   provider: string;
+//   created_at: string;
+//   status: string;
+//   last_seen: string;
+//   updated_at: string;
+//   devices: any[] | null;
+//   participants: any[] | null;
+// }
+// interface Messages {
+//   id: string;
+//   conversation_id: string;
+//   sender_id: string;
+//   content: string;
+//   type: "sending" | "sent" | "delivered" | "read" | "failed"; // tuỳ loại message hỗ trợ
+//   status: 'sent' | 'delivered' | 'read';
+//   is_edited: boolean;
+//   deleted: boolean;
+//   created_at: string;
+//   updated_at: string;
+//   deleted_at: string | null;
+//   sender: User;
+// }
 // Enhanced ChatProps interface
 export interface ChatProps {
   id: string; // Required - conversation ID
@@ -133,13 +162,13 @@ export interface ChatProps {
   alt?: string; // Alt text for image
   
   // Messages & Users
-  chats?: Chat[];
+  chats?: Messages[];
   users?: ChatUser[];
   current_user_id?: string;
   
   // Callbacks
   onBack?: () => void;
-
+  userInfor?: UserResponse;
   // Chat metadata
   created_at?: string;
   updated_at?: string;

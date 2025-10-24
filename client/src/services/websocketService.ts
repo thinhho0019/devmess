@@ -7,7 +7,7 @@ class WebSocketService {
     private reconnectInterval: number = 5000; // 5 seconds
     private reconnectAttempts: number = 5;
     private currentAttempts: number = 0;
-
+    private token:string = "";
     public onOpen: (() => void) | null = null;
     public onClose: (() => void) | null = null;
     public onError: ((event: Event) => void) | null = null;
@@ -20,6 +20,10 @@ class WebSocketService {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             console.log("WebSocket is already connected.");
             return;
+        }
+        this.token = localStorage.getItem("access_token") || "";
+        if(this.token){
+            this.url += `?token=${this.token}`;
         }
 
         this.socket = new WebSocket(this.url);

@@ -3,6 +3,7 @@ package router
 import (
 	"project/handler"
 	"project/middleware"
+	"project/service"
 	"project/websocket"
 
 	"github.com/gin-contrib/cors"
@@ -13,7 +14,13 @@ func SetupRouter(hub *websocket.Hub,
 	authHandler *handler.AuthHandler,
 	userHandler *handler.UserHandler,
 	authMiddleware *middleware.AuthMiddleware,
-	imageHandler *handler.ImageHandler) *gin.Engine {
+	friendHandler *handler.FriendHandler,
+	wsHandler *websocket.WsHandler,
+	authService *service.AuthService,
+	imageHandler *handler.ImageHandler,
+	conversationHandler *handler.ConversationHandler,
+	messageHandler *handler.MessageHanlder,
+) *gin.Engine {
 	r := gin.Default()
 
 	// CORS middleware
@@ -22,6 +29,7 @@ func SetupRouter(hub *websocket.Hub,
 			"http://localhost",
 			"http://localhost:80",
 			"http://localhost:5173",
+			"http://localhost:3000",
 			"http://127.0.0.1",
 			"http://127.0.0.1:80",
 			"https://devmess.cloud",
@@ -32,15 +40,16 @@ func SetupRouter(hub *websocket.Hub,
 		AllowCredentials: true,
 	}))
 	r.Use(middleware.RateLimitMiddleware())
+
 	// Thêm route cho WebSocket
-	r.GET("/ws", func(c *gin.Context) {
-		handler.ServeWs(hub, c.Writer, c.Request)
-	})
+	r.GET("/ws", wsHandler.ServeWs())
 
 	// Gọi các module router
 	AuthRouter(r, authHandler, authMiddleware)
 	UserRouter(r, authHandler, authMiddleware, userHandler)
 	ImageRouter(r, authMiddleware, imageHandler)
-	FriendshipRouter(r, authMiddleware)
+	FriendshipRouter(r, authMiddleware, friendHandler)
+	ConversationRouter(r, authMiddleware, conversationHandler)
+	MessageRouter(r, authMiddleware, messageHandler)
 	return r
 }

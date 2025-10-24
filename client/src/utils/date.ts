@@ -9,23 +9,23 @@ export const TypeDate = {
 
 export type TypeDate = (typeof TypeDate)[keyof typeof TypeDate];
 
-export const convertUtcToDatePart = (str: string, type: TypeDate): number | null => {
+export const convertUtcToDatePart = (str: string, type: TypeDate, timezoneOffset = 0): number | null => {
     const d = new Date(str);
     if (isNaN(d.getTime())) return null;
-
+    const localTime = new Date(d.getTime() + timezoneOffset * 60 * 60 * 1000);
     switch (type) {
         case TypeDate.Day:
-            return d.getUTCDate();
+            return localTime.getUTCDate();
         case TypeDate.Month:
-            return d.getUTCMonth() + 1;
+            return localTime.getUTCMonth() + 1;
         case TypeDate.Year:
-            return d.getUTCFullYear();
+            return localTime.getUTCFullYear();
         case TypeDate.Hours:
-            return d.getUTCHours();
+            return localTime.getUTCHours();
         case TypeDate.Minutes:
-            return d.getUTCMinutes();
+            return localTime.getUTCMinutes();
         case TypeDate.Seconds:
-            return d.getUTCSeconds();
+            return localTime.getUTCSeconds();
         default:
             return null;
     }
