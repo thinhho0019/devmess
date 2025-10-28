@@ -34,7 +34,8 @@ interface Props {
   onLogin: (token: string) => void;
 }
 
-const GoogleLoginButton: React.FC<Props> = ({ }) => {
+const GoogleLoginButton: React.FC<Props> = ({ onLogin }) => {
+  console.log("GoogleLoginButton rendered", onLogin);
   const handleGoogleLogin = () => {
     // Dùng origin của trang hiện tại, sẽ tự động là localhost hoặc devmess.cloud
     // Không cần truyền redirect_uri nếu backend đã dùng env GOOGLE_REDIRECT_URL
