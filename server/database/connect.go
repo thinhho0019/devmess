@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"project/models"
-
 	"strings"
 
 	_ "github.com/lib/pq"
@@ -34,57 +33,95 @@ func ConnectDB() {
 	if err != nil {
 		log.Fatalf("❌ Không thể kết nối database: %v", err)
 	}
+
+	DB = db
+
+	// 3️⃣ Reset database nếu có flag
 	if os.Getenv("RESET_DB") == "true" {
-		err := ResetDatabase(db)
-		if err != nil {
-			log.Fatalf("❌ Lỗi auto migrate: %v", err)
+		log.Println("🔄 Resetting database...")
+		if err := ResetDatabase(db); err != nil {
+			log.Fatalf("❌ Lỗi reset database: %v", err)
 		}
-		DB = db
 		log.Println("✅ Database đã được reset thành công!")
 		return
 	}
-	// 3️⃣ Auto migrate
-	err = db.AutoMigrate(
-		&models.User{},
-		&models.Token{},
-		&models.Device{},
-		&models.Conversation{},
-		&models.Participant{},
-		&models.Message{},
-		// &models.ConversationMember{},
-		&models.Friendship{},
-	)
-	if err != nil {
+
+	// 4️⃣ Auto migrate theo thứ tự dependencies
+	if err := AutoMigrateInOrder(db); err != nil {
 		log.Fatalf("❌ Lỗi auto migrate: %v", err)
 	}
 
-	log.Println("✅ Auto migrate thành công!")
 	log.Println("✅ Kết nối PostgreSQL thành công!")
-
-	DB = db
 }
-func ResetDatabase(db *gorm.DB) error {
-	db.Exec("DROP SCHEMA public CASCADE;")
-	db.Exec("CREATE SCHEMA public;")
-	err := db.AutoMigrate(
-		&models.User{},
-		&models.Token{},
-		&models.Device{},
-		&models.Conversation{},
-		&models.Participant{},
-		&models.Message{},
 
-		// &models.Message{},
-		// &models.Conversation{},
-		// &models.Participant{},
-		// &models.ConversationMember{},
-		&models.Friendship{},
-	)
-	if err != nil {
-		return err
+// AutoMigrateInOrder migrates tables in correct dependency order
+func AutoMigrateInOrder(db *gorm.DB) error {
+	// 1️⃣ Independent tables first
+	log.Println("🔄 Migrating users table...")
+	if err := db.AutoMigrate(&models.User{}); err != nil {
+		return fmt.Errorf("failed to migrate users: %w", err)
 	}
+	log.Println("✅ Users table migrated")
+
+	log.Println("🔄 Migrating tokens table...")
+	if err := db.AutoMigrate(&models.Token{}); err != nil {
+		return fmt.Errorf("failed to migrate tokens: %w", err)
+	}
+	log.Println("✅ Tokens table migrated")
+
+	log.Println("🔄 Migrating devices table...")
+	if err := db.AutoMigrate(&models.Device{}); err != nil {
+		return fmt.Errorf("failed to migrate devices: %w", err)
+	}
+	log.Println("✅ Devices table migrated")
+
+	// 2️⃣ Conversation (depends on User but no circular dependency)
+	log.Println("🔄 Migrating conversations table...")
+	if err := db.AutoMigrate(&models.Conversation{}); err != nil {
+		return fmt.Errorf("failed to migrate conversations: %w", err)
+	}
+	log.Println("✅ Conversations table migrated")
+
+	// 3️⃣ Messages (depends on Conversation and User)
+	log.Println("🔄 Migrating messages table...")
+	if err := db.AutoMigrate(&models.Message{}); err != nil {
+		return fmt.Errorf("failed to migrate messages: %w", err)
+	}
+	log.Println("✅ Messages table migrated")
+
+	// 4️⃣ Participants (depends on Conversation and User)
+	log.Println("🔄 Migrating participants table...")
+	if err := db.AutoMigrate(&models.Participant{}); err != nil {
+		return fmt.Errorf("failed to migrate participants: %w", err)
+	}
+	log.Println("✅ Participants table migrated")
+
+	// 5️⃣ Friendships (depends on User)
+	log.Println("🔄 Migrating friendships table...")
+	if err := db.AutoMigrate(&models.Friendship{}); err != nil {
+		return fmt.Errorf("failed to migrate friendships: %w", err)
+	}
+	log.Println("✅ Friendships table migrated")
+
+	log.Println("✅ All tables migrated successfully!")
 	return nil
 }
+
+func ResetDatabase(db *gorm.DB) error {
+	log.Println("🗑️ Dropping existing schema...")
+	if err := db.Exec("DROP SCHEMA public CASCADE;").Error; err != nil {
+		return fmt.Errorf("failed to drop schema: %w", err)
+	}
+
+	log.Println("📦 Creating new schema...")
+	if err := db.Exec("CREATE SCHEMA public;").Error; err != nil {
+		return fmt.Errorf("failed to create schema: %w", err)
+	}
+
+	log.Println("🔄 Running migrations...")
+	return AutoMigrateInOrder(db)
+}
+
 func CreateDBIfNotExists() {
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
@@ -106,9 +143,9 @@ func CreateDBIfNotExists() {
 	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", dbname))
 	if err != nil && !isDuplicateDatabaseError(err) {
 		log.Fatalf("❌ Lỗi tạo database: %v", err)
-	} else {
-		log.Printf("✅ Database '%s' sẵn sàng!", dbname)
 	}
+
+	log.Printf("✅ Database '%s' sẵn sàng!", dbname)
 }
 
 func isDuplicateDatabaseError(err error) bool {
