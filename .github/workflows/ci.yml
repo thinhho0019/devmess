@@ -39,7 +39,7 @@ jobs:
       - name: Create .env file for production
         env:
           VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
-       
+
           VITE_API_URL: https://devmess.cloud/api/v1
         run: |
           echo "VITE_WS_URL=${VITE_WS_URL}" > .env
@@ -80,13 +80,12 @@ jobs:
 
       - name: Build Go binary
         run: go build -o app main.go
-       
+
       - name: Upload backend binary
         uses: actions/upload-artifact@v4
         with:
           name: backend-binary
           path: server/app
-  
 
   # ---------- DEPLOY ----------
   deploy:
@@ -118,7 +117,7 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "frontend_dist,server_bin/app,server_env/.env"
           target: /var/www/devmess
-      
+
       - name: Deploy backend .env via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -154,7 +153,6 @@ jobs:
 
             chmod 600 /var/www/devmess/.env
             echo "✅ .env file created on server"
-
 
       - name: Setup Redis & PostgreSQL on server
         uses: appleboy/ssh-action@v1.0.3
@@ -204,7 +202,6 @@ jobs:
             sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${{ secrets.DB_NAME }} TO ${{ secrets.DB_USER }};"
 
             echo "✅ PostgreSQL setup completed."
-
 
       - name: Deploy Backend & Setup Nginx
         uses: appleboy/ssh-action@v1.0.3
@@ -262,7 +259,7 @@ jobs:
 
             # Check backend status
             sudo systemctl status devmess-backend.service --no-pager || true
-            
+
             # Show recent logs
             echo "📋 Recent backend logs:"
             sudo journalctl -u devmess-backend.service -n 20 --no-pager || true
@@ -280,71 +277,114 @@ jobs:
 
             sudo bash -c 'cat > /etc/nginx/sites-available/devmess.conf <<'\''EOF'\''
             server {
-              listen 80 default_server;
-              listen [::]:80 default_server;
-              server_name devmess.cloud www.devmess.cloud _;
-              
-              # Increase buffer sizes for large requests
-              client_max_body_size 50M;
-              client_body_buffer_size 128k;
-              
-              root /var/www/devmess/frontend_dist;
-              index index.html;
+                listen 80;
+                server_name devmess.cloud www.devmess.cloud;
 
-              # API endpoints - forward to Go backend and preserve original path
-              # Note: do NOT include a trailing slash in proxy_pass so Nginx will
-              # forward the full original request path (e.g. /api/v1/...) to backend.
-              location /api/ {
-                proxy_pass http://127.0.0.1:8080;
-                proxy_redirect off;
-
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
-                proxy_set_header X-Forwarded-Host $host;
-
-                proxy_connect_timeout 60s;
-                proxy_send_timeout 60s;
-                proxy_read_timeout 60s;
-              }
-              location /ping {
-                proxy_pass http://127.0.0.1:8080/ping;
-                proxy_redirect off;
-
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
+                # Redirect all HTTP to HTTPS
+                return 301 https://$host$request_uri;
             }
-              # WebSocket endpoint
-              location /ws/ {
-                  proxy_pass http://127.0.0.1:8080/ ;
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection "upgrade";
-                  proxy_set_header Host $host;
-              }
 
-              # Frontend - must be last to avoid catching API routes
-              location / {
+            server {
+                listen 443 ssl;
+                server_name devmess.cloud www.devmess.cloud;
+
+                ssl_certificate /etc/letsencrypt/live/devmess.cloud/fullchain.pem;
+                ssl_certificate_key /etc/letsencrypt/live/devmess.cloud/privkey.pem;
+
+                ssl_protocols TLSv1.2 TLSv1.3;
+                ssl_ciphers HIGH:!aNULL:!MD5;
+
+                location /api/ {
+                    proxy_pass http://127.0.0.1:8080;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+                location /ws/ {
+                    proxy_pass http://127.0.0.1:8080/ ;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host $host;
+                }
+                    location / {
                 try_files $uri $uri/ /index.html;
               }
-
               # Custom error pages
               error_page 502 503 504 /50x.html;
               location = /50x.html {
                 root /usr/share/nginx/html;
               }
+                
             }
+
+            # server {
+            #   listen 80 default_server;
+            #   listen [::]:80 default_server;
+            #   server_name devmess.cloud www.devmess.cloud _;
+              
+            #   # Increase buffer sizes for large requests
+            #   client_max_body_size 50M;
+            #   client_body_buffer_size 128k;
+              
+            #   root /var/www/devmess/frontend_dist;
+            #   index index.html;
+
+            #   # API endpoints - forward to Go backend and preserve original path
+            #   # Note: do NOT include a trailing slash in proxy_pass so Nginx will
+            #   # forward the full original request path (e.g. /api/v1/...) to backend.
+            #   location /api/ {
+            #     proxy_pass http://127.0.0.1:8080;
+            #     proxy_redirect off;
+
+            #     proxy_set_header Host $host;
+            #     proxy_set_header X-Real-IP $remote_addr;
+            #     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            #     proxy_set_header X-Forwarded-Proto $scheme;
+            #     proxy_set_header X-Forwarded-Host $host;
+
+            #     proxy_connect_timeout 60s;
+            #     proxy_send_timeout 60s;
+            #     proxy_read_timeout 60s;
+            #   }
+            #   location /ping {
+            #     proxy_pass http://127.0.0.1:8080/ping;
+            #     proxy_redirect off;
+
+            #     proxy_set_header Host $host;
+            #     proxy_set_header X-Real-IP $remote_addr;
+            #     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            #     proxy_set_header X-Forwarded-Proto $scheme;
+            # }
+            #   # WebSocket endpoint
+            #   location /ws/ {
+            #       proxy_pass http://127.0.0.1:8080/ ;
+            #       proxy_http_version 1.1;
+            #       proxy_set_header Upgrade $http_upgrade;
+            #       proxy_set_header Connection "upgrade";
+            #       proxy_set_header Host $host;
+            #   }
+
+            #   # Frontend - must be last to avoid catching API routes
+            #   location / {
+            #     try_files $uri $uri/ /index.html;
+            #   }
+
+            #   # Custom error pages
+            #   error_page 502 503 504 /50x.html;
+            #   location = /50x.html {
+            #     root /usr/share/nginx/html;
+            #   }
+            # }
             EOF'
 
             sudo ln -sf /etc/nginx/sites-available/devmess.conf /etc/nginx/sites-enabled/devmess.conf
-            
+
             # Test nginx config
             echo "🔍 Testing Nginx configuration..."
             sudo nginx -t
-            
+
             if [ $? -eq 0 ]; then
               sudo systemctl reload nginx
               echo "✅ Nginx configured and reloaded."
@@ -356,5 +396,5 @@ jobs:
             # Final connectivity test
             echo "🔍 Testing backend connectivity..."
             curl -v http://127.0.0.1:8080/api/v1/health || echo "⚠️ Backend health check failed"
-            
+
             echo "✅ Deployment completed."
