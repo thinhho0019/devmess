@@ -22,6 +22,7 @@ type ConversationRepository interface {
 		before *time.Time, // con trỏ thời gian: chỉ lấy các cuộc trò chuyện cũ hơn thời điểm này
 	) ([]*models.Conversation, error)
 	CountConversationsByUserID(userID uuid.UUID) (int64, error)
+	UpdateLastMessageIDInConversation(conversationID uuid.UUID, messageID uuid.UUID) error
 	UpdateConversation(conversation *models.Conversation) (*models.Conversation, error)
 	DeleteConversation(conversationID uuid.UUID) error
 	GetDirectConversation(userID1, userID2 uuid.UUID) (*models.Conversation, error)
@@ -57,6 +58,16 @@ func (r *conversationRepo) CreateConversation(conversation *models.Conversation)
 	}
 
 	return conversation, nil
+}
+
+func (r *conversationRepo) UpdateLastMessageIDInConversation(conversationID uuid.UUID, messageID uuid.UUID) error {
+	result := r.db.Model(&models.Conversation{}).
+		Where("id = ?", conversationID).
+		Update("last_message_id", messageID)
+	if result.Error != nil {
+		return fmt.Errorf("failed to update last message ID: %w", result.Error)
+	}
+	return nil
 }
 
 func (r *conversationRepo) GetMessageByConversationID(conversationID uuid.UUID, limit int, before *time.Time) ([]*models.Message, error) {

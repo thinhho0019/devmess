@@ -3,6 +3,7 @@ package websocket
 import (
 	"encoding/json"
 	"log"
+	"project/repository"
 
 	"time"
 
@@ -61,6 +62,8 @@ func (c *Client) ReadPump() {
 			log.Println("invalid message format", err)
 			continue
 		}
+		//update online status
+		c.Hub.UpdateUserOnlineThrottled(c.ID, 10*time.Second)
 		switch msg.Type {
 		case "ping":
 			// Respond to ping
@@ -69,12 +72,34 @@ func (c *Client) ReadPump() {
 		case "chat":
 			if msg.To != "" {
 				c.Hub.SendToUser(msg.To, message)
-
 			}
 		case "notify_friend":
 			if msg.To != "" {
 				c.Hub.NotifyInviteFriend(msg.To, msg.Payload)
 			}
+		case "is_online":
+			// Handle is_online broadcast if needed
+			is_online, time_online, err := repository.NewRedisRepository().IsUserOnline(msg.To)
+			if err != nil {
+				log.Printf("failed to check online status for %s: %v", msg.To, err)
+				break
+			}
+			if is_online && time_online > 0 {
+				log.Printf("user %s is online, time online: %v", msg.To, time_online)
+			}
+			payload := map[string]interface{}{
+				"type":        "is_online_response",
+				"user_id":     msg.To,
+				"is_online":   is_online,
+				"time_online": time_online.Seconds(),
+			}
+			response, err := json.Marshal(payload)
+			if err != nil {
+				log.Printf("failed to marshal is_online response for %s: %v", msg.To, err)
+				break
+			}
+			log.Println("send to user ", msg.From)
+			go c.Hub.SendToUser(msg.From, response)
 		default:
 			b, _ := json.Marshal(MessageWs{
 				Type:    "error",

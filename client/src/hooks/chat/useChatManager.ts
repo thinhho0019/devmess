@@ -1,34 +1,67 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type {   MessageReaction, EmojiData } from '../../components/chat/types';
-import { getTimeIsoCurrent } from '../../utils/date';
+import type { MessageReaction, EmojiData } from '../../components/chat/types';
+import { convertTimeToOnlineStatus,  getTimeIsoCurrent } from '../../utils/date';
 import { MessageType, MessageStatus } from '../../components/chat/types';
 import { useSocket } from '../socket/useSocket';
 import { fetchMessages, SendMessage } from '../../api/message';
 import { useParams } from 'react-router-dom';
 import type { Messages } from '../../pages/HomeChat';
 
-export const useChatManager = (initialChats: Messages[], currentUserId: string) => {
-    console.log("Current User ID in useChatManager:", currentUserId);
-    console.log("Initial Chats in useChatManager:", initialChats);
+export const useChatManager = (initialChats: Messages[], currentUserId: string, userID: string,
+    onUpdateLastMessage: (conversationId: string, newMessage: Messages) => void,
+    handlerChangeStatus: (user_id: string, newStatus: string) => void
+) => {
     const [messages, setMessages] = useState<Messages[]>(initialChats);
+
     const { conversation_id } = useParams<{ conversation_id: string }>();
+    const [loadingMessages, setLoadingMessages] = useState<boolean>(false);
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const { lastMessage, sendMessage: sendSocketMessage } = useSocket();
-    // Listen for incoming messages from WebSocket
+
+    // auto sending check online_user
+
     useEffect(() => {
-        console.log("Current messages in useChatManager:", messages);
-        console.log("Conversation ID in useChatManager:", conversation_id);
-        if (messages.length == 0 && conversation_id) {
-            // load message for this conversation if needed
-            fetchMessages(conversation_id, 50, new Date()).then((data) => {
-                console.log("Messages data for chat", conversation_id, ":", data);
-                setMessages(data);
-            });
+        const presencePayload = {
+            type: 'is_online',
+            from: currentUserId,
+            to: userID
+        };
+        sendSocketMessage(JSON.stringify(presencePayload));
+        const interval = setInterval(() => {
+            console.log("Sending presence payload (interval):", presencePayload);
+            sendSocketMessage(JSON.stringify(presencePayload));
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, [userID, sendSocketMessage, currentUserId]);
+    // Fetch messages when conversation_id changes (initial load only)
+    useEffect(() => {
+        if (conversation_id) {
+            setLoadingMessages(true);
+            fetchMessages(conversation_id, 50, new Date())
+                .then((data) => {
+                    console.log("Messages data for chat", conversation_id, ":", data);
+                    if (Array.isArray(data)) {
+                        data = data.slice().reverse();
+                    }
+                    setMessages(data);
+                })
+                .catch((err) => {
+                    console.error("Failed to fetch messages:", err);
+                })
+                .finally(() => {
+                    setLoadingMessages(false);
+                });
         }
+    }, [conversation_id]); // Only depend on conversation_id, not lastMessage
+
+    // Listen for incoming messages from WebSocket (separate effect)
+    useEffect(() => {
         if (lastMessage !== null) {
             try {
                 const eventData = JSON.parse(lastMessage.data);
+                console.log("Received WebSocket message:", eventData);
                 switch (eventData.type) {
                     case 'new_message': {
                         const newMessage: Messages = eventData.payload;
@@ -55,10 +88,23 @@ export const useChatManager = (initialChats: Messages[], currentUserId: string) 
                         );
                         break;
                     }
-                    case 'receive_message':{
+                    case 'receive_message': {
                         console.log("Received 'receive_message' event:", eventData);
-                        const messsage:Messages = eventData.message;
-                        setMessages((prev) => [...prev, messsage]);
+                        const messsage: Messages = eventData.message;
+                        const conversation = eventData.conversation;
+                        // Only add to messages list if this message belongs to the currently open conversation
+                        if (conversation === conversation_id) {
+                            setMessages((prev) => [...prev, messsage]);
+                        }
+                        // Always update last_message preview for the ACTUAL conversation (not the focused one)
+                        onUpdateLastMessage(conversation || '', messsage);
+                        break;
+                    }
+                    case 'is_online_response': {
+                        const { user_id, is_online, time_online } = eventData;
+                        console.log(`User ${user_id} is ${is_online ? 'online' : 'offline'}`);
+                        const message_show = is_online ? 'online' : `offline since ${convertTimeToOnlineStatus(time_online)}`;
+                        handlerChangeStatus(user_id, message_show);
                         break;
                     }
                     default:
@@ -74,14 +120,28 @@ export const useChatManager = (initialChats: Messages[], currentUserId: string) 
                 console.log("Received non-JSON or malformed data:", lastMessage.data);
             }
         }
-    }, [lastMessage,conversation_id]);
+    }, [lastMessage]); // Only depend on lastMessage for websocket updates
 
 
+    // Auto-scroll to bottom when messages change
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [messages]);
+
+    // Auto-scroll to bottom when first loaded (after fetch completes)
+    useEffect(() => {
+        if (messages.length > 0 && chatContainerRef.current) {
+            // Small delay to ensure DOM has rendered
+            const timer = setTimeout(() => {
+                if (chatContainerRef.current) {
+                    chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+                }
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [messages.length]);
 
     const sendMessage = useCallback((text: string, file: File | null = null) => {
 
@@ -104,7 +164,7 @@ export const useChatManager = (initialChats: Messages[], currentUserId: string) 
             conversation_id: '',
             is_edited: false,
             deleted: false,
-            updated_at: '',
+            updated_at: new Date().toISOString(),
         };
 
         const messagePayload = {
@@ -125,7 +185,7 @@ export const useChatManager = (initialChats: Messages[], currentUserId: string) 
         });
         // Optimistically update the UI
         setMessages(prev => [...prev, newMessage]);
-
+        onUpdateLastMessage(conversation_id, newMessage);
         // Send the message via WebSocket
         sendSocketMessage(JSON.stringify(messagePayload));
 
@@ -185,5 +245,6 @@ export const useChatManager = (initialChats: Messages[], currentUserId: string) 
         chatContainerRef,
         sendMessage,
         addReaction,
+        loadingMessages
     };
 };

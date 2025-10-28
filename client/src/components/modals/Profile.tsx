@@ -11,6 +11,7 @@ export const PopupProfile = ({ show, onClose, user, is_profile_owner, onAvatarCh
     onClose: () => void;
     user?: UserResponse;
     is_profile_owner?: boolean;
+    
     onAvatarChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) => {
   const fileRef = useRef<HTMLInputElement | null>(null);

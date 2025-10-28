@@ -58,6 +58,7 @@ func (h *MessageHanlder) SendMessageToConversation(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No participants found"})
 		return
 	}
+
 	var userid_to string
 	for _, participant := range *participants {
 		if participant.UserID == user.ID {

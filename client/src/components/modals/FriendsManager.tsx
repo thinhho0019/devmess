@@ -51,7 +51,7 @@ export const PopupFriendsManager = ({
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<typeof friendsList>([]);
     // eslint-disable-next-line
-    const { lastMessage, sendMessage: sendSocketMessage } = useSocket();
+    const { lastMessage  } = useSocket();
     // receive websocket message to update friend list in real-time
     useEffect(() => {
         if (lastMessage !== null) {

@@ -375,7 +375,7 @@ func (r *messageRepo) GetMessagesBeforeTime(conversationID uuid.UUID, userID uui
 
 	err := query.
 		Preload("Sender").
-		Order("messages.created_at ASC").
+		Order("messages.created_at DESC").
 		Limit(limit).
 		Find(&messages).Error
 

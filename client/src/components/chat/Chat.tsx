@@ -9,7 +9,8 @@ import EmojiBox from "../emoji/emojiBox";
 import { Phone, Video, MoreHorizontal } from "lucide-react";
 import { Avatar } from "../avatar";
 import { PopupProfile } from "../modals/Profile";
-import {  useState } from "react";
+import { useState } from "react";
+import LoadingSpecial from "../loading/LoadingSpecial";
 
 const emojis: EmojiData[] = [
     { emoji: "😀", type: "smile", description: "Cười vui vẻ" },
@@ -29,11 +30,19 @@ const ChatView: React.FC<ChatProps> = ({
     chats = [],
     userInfor = {},
     is_mobile = false,
-    current_user_id =  currentUserID 
+    current_user_id = currentUserID,
+    onUpdateLastMessage
+
 }) => {
-    const { messages, chatContainerRef, sendMessage, addReaction } = useChatManager(chats, current_user_id);
+    const [status, setStatus] = useState("offline");
+    const handlerChangeStatus = (user_id: string, newStatus: string) => {
+        if (user_id != userInfor.id) return;
+        setStatus(newStatus);
+    }
+    const { messages, chatContainerRef, sendMessage, addReaction, loadingMessages } = useChatManager(chats, current_user_id, userInfor.id || "", onUpdateLastMessage, handlerChangeStatus);
     const { showEmojiPopup, popupPosition, selectedMessageId, messageRefs, openEmojiPopup, closeEmojiPopup } = useEmojiManager();
     const [openProfile, setOpenProfile] = useState(false);
+
     const handleEmojiSelect = (emoji: EmojiData) => {
         if (selectedMessageId) {
             addReaction(selectedMessageId, emoji);
@@ -51,7 +60,7 @@ const ChatView: React.FC<ChatProps> = ({
             <div className="flex items-center justify-between px-4 py-2 bg-gradient-to-r from-gray-900/60 to-gray-800/60 backdrop-blur-lg border-b border-white/10 rounded-xl mb-2 shadow-sm">
                 <div className="flex items-center gap-3">
                     <div className="relative" onClick={() => setOpenProfile(prev => !prev)}>
-                        <Avatar src={img} alt={name} online={true} />
+                        <Avatar src={img} alt={name} online={false} />
 
 
                     </div>
@@ -59,7 +68,7 @@ const ChatView: React.FC<ChatProps> = ({
                     <div>
                         <h3 className="font-semibold text-white text-sm sm:text-base flex items-center gap-1">
                             {name}
-                            <span className="text-xs text-gray-400 font-normal">• online</span>
+                            <span className="text-xs text-gray-400 font-normal">• {status}</span>
                         </h3>
                         {!is_mobile && (
                             <p className="text-xs text-gray-400">Chat securely with {name}</p>)}
@@ -92,10 +101,13 @@ const ChatView: React.FC<ChatProps> = ({
                     </button>
                 </div>
             </div>
+
             <div ref={chatContainerRef} className="w-full overflow-y-auto chat-scroll">
                 <div className="h-full flex-col max-w-4xl mx-auto px-6 py-4  ">
-                    {messages.map((c, idx) => {
-                        console.log("Rendering message:", c);
+                    {loadingMessages ? (
+                        <LoadingSpecial />
+                    ) : messages.map((c, idx) => {
+
                         const isCurrentUser = c.sender_id === current_user_id;
                         const bubbleBase = "relative w-fit max-w-[520px] text-sm rounded-2xl px-4 py-3 shadow-lg cursor-pointer transform transition-all";
                         // Muted/darker palettes for a calmer 'fantasy' look

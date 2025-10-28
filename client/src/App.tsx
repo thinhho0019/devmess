@@ -10,6 +10,7 @@ import Register from "./pages/Register";
 
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPasswordConfirm from "./pages/ResetPassword";
+import { SocketProvider } from "./contexts/SocketContext";
 
 
 function App() {
@@ -18,8 +19,14 @@ function App() {
     <>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/t" element={<HomeChat />} />
-        <Route path="/t/:conversation_id" element={<HomeChat />} />
+        <Route path="/t" element={ <SocketProvider>
+            <HomeChat />
+          </SocketProvider>} />
+        <Route path="/t/:conversation_id" element={
+          <SocketProvider>
+            <HomeChat />
+          </SocketProvider>}
+        />
         <Route path="/l" element={<Login />} />
         <Route path="/r" element={<Register />} />
         <Route path="/about" element={<About />} />

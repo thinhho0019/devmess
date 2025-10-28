@@ -58,7 +58,7 @@ func main() {
 	authService := service.NewAuthService(userRepo, deviceRepo, tokenRepo, redisRepo, googleService.OAuthConfig)
 	userService := service.NewUserService(userRepo)
 	conversationService := service.NewConversationService(conversationRepo, participantRepo, messageRepo)
-	messageService := service.NewMessageService(messageRepo)
+	messageService := service.NewMessageService(messageRepo, conversationRepo)
 	friendService := service.NewInitFriendService(friendRepo, userRepo)
 	participantService := service.NewParticipantService(participantRepo, redisRepo)
 	// Initialize WebSocket hub

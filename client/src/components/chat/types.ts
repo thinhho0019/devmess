@@ -1,4 +1,4 @@
-import type { Messages } from "../../pages/HomeChat";
+import type { ChatMessage, Messages } from "../../pages/HomeChat";
 import type { UserResponse } from "../../types/UserResponse";
 
 // Type constants thay vì enum
@@ -168,6 +168,8 @@ export interface ChatProps {
   
   // Callbacks
   onBack?: () => void;
+  setConversations?: (conversations: ChatMessage[]) => void;
+  onUpdateLastMessage: (conversationId: string, newMessage: Messages) => void;
   userInfor?: UserResponse;
   // Chat metadata
   created_at?: string;

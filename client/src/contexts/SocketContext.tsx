@@ -57,6 +57,14 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     const sendMessage = useCallback((data: string) => {
         if (webSocketService.current) {
             webSocketService.current.sendMessage(data);
+            try {
+                // Also set lastMessage locally so outgoing messages can be processed by listeners
+                // Create a synthetic MessageEvent with the same shape as incoming events
+                const evt = new MessageEvent('message', { data: String(data) });
+                setLastMessage(evt);
+            } catch   {
+                // In some environments MessageEvent constructor may not be available; ignore silently
+            }
         }
     }, []);
 

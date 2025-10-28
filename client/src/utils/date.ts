@@ -1,3 +1,5 @@
+ 
+
 export const TypeDate = {
     Day: "day",
     Month: "month",
@@ -30,6 +32,24 @@ export const convertUtcToDatePart = (str: string, type: TypeDate, timezoneOffset
             return null;
     }
 };
+export const convertTimeToOnlineStatus = (seconds: string ): string => {
+    const secondss = Math.floor(Number(seconds));
+    console.log("convertTimeToOnlineStatus seconds:", seconds);
+    if (isNaN(secondss) || secondss < 0) return "unknown";
+    if (secondss < 60) {
+        return `${secondss} seconds ago`;
+    }
+    const minutes = Math.floor(secondss / 60);
+    if (minutes < 60) {
+        return `${minutes} minutes ago`;
+    }
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) {
+        return `${hours} hours ago`;
+    }
+    const days = Math.floor(hours / 24);
+    return `${days} days ago`;
+};
 /**
  * Convert UTC time string to formatted local time based on timezone offset.
  * @param str - UTC time string (ví dụ: "2025-09-22T07:30:00Z")
@@ -49,12 +69,12 @@ export const convertTimeMessage = (str: string, timezone: number): string | "" =
         // Tính offset
         const localTime = new Date(utcTime + timezone * 60 * 60 * 1000);
 
-        // Format: HH:mm:ss dd/MM/yyyy
-        const pad = (n: number) => n.toString().padStart(2, "0");
+        // Format: HH:mm with proper padding
+        const pad = (n: number) => String(n).padStart(2, "0");
         const hours = pad(localTime.getUTCHours());
         const minutes = pad(localTime.getUTCMinutes());
         return `${hours}:${minutes}`;
-    } catch  {
+    } catch {
         return "";
     }
 };
@@ -62,7 +82,7 @@ export const convertTimeMessage = (str: string, timezone: number): string | "" =
  * Get time utc current .
  * @returns time utc type string hoặc null if input dont match
  */
-export const getTimeIsoCurrent = ():string=>{
+export const getTimeIsoCurrent = (): string => {
     const now = new Date();
     const isoNoMs = now.toISOString().split('.')[0] + "Z";
     return isoNoMs

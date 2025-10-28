@@ -15,17 +15,10 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: 1,
-      title: "New Message",
-      message: "You have a new message from Alice",
+      title: "Thông báo mới từ DevTH",
+      message: "Chào mừng bạn đến với web nhắn tin realtime",
       time: "2 min ago",
       read: false,
-    },
-    {
-      id: 2,
-      title: "System Update",
-      message: "Server maintenance scheduled for tonight",
-      time: "1 hour ago",
-      read: true,
     },
   ]);
 
@@ -33,7 +26,13 @@ export default function NotificationBell() {
   const bellRef = useRef<HTMLDivElement>(null);
 
   const handleToggle = () => setShowPopup((prev) => !prev);
-
+  const handleCheckNotification = (id: number) => {
+    setNotifications((prev) =>
+      prev.map((n) => 
+        n.id === id ? { ...n, read: true } : n
+      )
+    );
+  }
   const markAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
@@ -104,7 +103,7 @@ export default function NotificationBell() {
                 </p>
               ) : (
                 notifications.map((n) => (
-                  <div
+                  <div onClick={() => handleCheckNotification(n.id)}
                     key={n.id}
                     className={`px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition ${
                       !n.read ? "bg-indigo-50 dark:bg-indigo-900/20" : ""

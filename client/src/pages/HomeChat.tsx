@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect  } from "react";
 import { FaSearch } from "react-icons/fa";
 import { FiEdit, FiMoreHorizontal, FiSend, FiSmile, FiUsers } from "react-icons/fi";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -11,17 +11,17 @@ import { useAuth } from "../hooks/auth/is_login";
 import LoadingFullScreen from "../components/loading/LoadingFullScreen";
 import { useImage } from "../hooks/api/useImage";
 import LoadingComponent from "../components/loading/LoadingComponent";
-import { SocketProvider } from "../contexts/SocketContext";
+import {  useSocket } from "../contexts/SocketContext";
 import { PopupProfile } from "../components/modals/Profile";
 import { PopupFriendsManager } from "../components/modals/FriendsManager";
 import NotificationBell from "../components/notify/NotificationBell";
 import { fetchAddFriend } from "../api/friends";
 import { convertUtcToDatePart, TypeDate } from "../utils/date";
 import { defaultProxyImageUrl } from "../utils/image";
- 
+
 import { useConversation } from "../hooks/chat/useConversation";
-import { useNavigate } from "react-router-dom";
- 
+import { useNavigate  } from "react-router-dom";
+
 
 interface LastMessage {
   id: string;
@@ -64,8 +64,8 @@ export interface Messages {
   conversation_id: string;
   sender_id: string;
   content: string;
-  type: 'text' | 'image' | 'file' | 'video'|'system'; // tuỳ loại message hỗ trợ
-  status: 'sending'| 'sent' | 'delivered' | 'read'|'failed';
+  type: 'text' | 'image' | 'file' | 'video' | 'system'; // tuỳ loại message hỗ trợ
+  status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
   is_edited: boolean;
   deleted: boolean;
   created_at: string;
@@ -87,7 +87,7 @@ export interface ChatMessage {
   deleted_at: string | null;
   last_message: LastMessage;
   participants: Participant[];
-  messages?: Messages[];
+  messages: Messages[];
 }
 
 // const chats: ChatMessage[] = [
@@ -163,27 +163,70 @@ export default function HomeChat() {
   // Start with no selection so we can show a friendly empty state
   const [selected, setSelected] = useState<ChatMessage | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const { lastMessage } = useSocket();
   const [showAddFriend, setShowAddFriend] = useState(false);
   const isMobile = useIsMobile();
   const urlImage = localStorage.getItem("avatar")
 
-  // conversations loaded asynchronously
-  // const [chats, setChats] = useState<ChatMessage[]>([]);
-  const { chats } = useConversation();
-  // useEffect(() => {
-  //   let mounted = true;
-  //   fetchConversations()
-  //     .then((data) => {
-  //       console.log("Conversations data:", data);
-  //       if (mounted && data) setChats(data);
-  //     })
-  //     .catch((err) => {
-  //       console.error("Failed to fetch conversations:", err);
-  //     });
-  //   return () => {
-  //     mounted = false;
-  //   };
-  // }, []);
+  const { chats, setConversations, reFetchConversation } = useConversation();
+
+  // Listen to ALL incoming messages to update conversation previews (last_message)
+  // This should run regardless of which conversation is currently selected
+  useEffect(() => {
+    console.log("Last message received in HomeChat:", lastMessage);
+    if (!lastMessage) return;
+
+    try {
+      const eventData = JSON.parse(lastMessage.data);
+
+      switch (eventData.type) {
+        case 'receive_message': {
+          const conversation_id = eventData.conversation;
+          const newMessage: Messages = eventData.message;
+          // Always update last_message preview for the conversation, even if it's not selected
+          handleUpdateLastMessage(conversation_id, newMessage);
+          break;
+        }
+        case 'update_friend': {
+          reFetchConversation();
+          break;
+        }
+
+        default: {
+          break;
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      console.log("Received non-JSON or malformed data:", lastMessage.data);
+    }
+  }, [lastMessage]);
+  const handleUpdateLastMessage = (conversationId: string, newMessage: Messages) => {
+    setConversations(prev =>
+      prev.map(conv => {
+
+        if (conv.id === conversationId) {
+          console.log("Updating last message for conversation:", conversationId, newMessage);
+          return {
+            ...conv,
+            last_message: {
+              id: newMessage.id,
+              conversation_id: newMessage.conversation_id,
+              content: newMessage.content,
+              type: newMessage.type,
+              status: newMessage.status,
+              is_edited: newMessage.is_edited,
+              deleted: newMessage.deleted,
+              created_at: newMessage.created_at,
+              updated_at: newMessage.updated_at,
+              deleted_at: newMessage.deleted_at ?? null,
+            },
+          };
+        }
+        return conv;
+      })
+    );
+  };
   const navigate = useNavigate();
   const { user, loading, isAuthenticated } = useAuth(true);
   console.log("User data:", user);
@@ -195,7 +238,7 @@ export default function HomeChat() {
   const handlerClickChat = (chat: ChatMessage) => {
     navigate(`/t/${chat.id}`);
     setSelected(chat);
-    
+
   }
   const mockUsers = [
     { id: "u1", name: "Alice Nguyen", email: "alice@gmail.com" },
@@ -221,14 +264,15 @@ export default function HomeChat() {
   if (isMobile) {
     return (
 
-      <SocketProvider>
+      <>
         <PopupFriendsManager
           show={showAddFriend}
           onClose={() => setShowAddFriend(false)}
           onAddFriend={handlerAddFriend}
           friendsList={mockUsers}
         />
-        <PopupProfile user={user ?? undefined} is_profile_owner={true} onAvatarChange={() => { }} show={showProfile} onClose={() => { setShowProfile(false); }}></PopupProfile>
+        <PopupProfile user={user ?? undefined}
+          is_profile_owner={true} onAvatarChange={() => { }} show={showProfile} onClose={() => { setShowProfile(false); }}></PopupProfile>
         <div className="h-screen w-screen flex flex-col bg-gray-100 dark:bg-gray-900 chat-scroll">
 
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
@@ -258,9 +302,10 @@ export default function HomeChat() {
           </div>
           <div className="flex-1 min-h-0">
             {selected ? (
-              <ChatView id={selected.id.toString()} chats={selected?.messages}  name={selected.name} img={
-                defaultProxyImageUrl(selected.participants.find(p => p.user_id !== user?.id)?.user.avatar || "")
-              } is_mobile={isMobile} />
+              <ChatView onUpdateLastMessage={handleUpdateLastMessage}
+                id={selected.id.toString()} chats={selected?.messages} name={selected.name} img={
+                  defaultProxyImageUrl(selected.participants.find(p => p.user_id !== user?.id)?.user.avatar || "")
+                } is_mobile={isMobile} />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center px-6">
                 <div className="p-6 bg-white/5 rounded-full mb-4">
@@ -278,12 +323,12 @@ export default function HomeChat() {
             )}
           </div>
         </div>
-      </SocketProvider>
+      </>
     );
   }
 
   return (
-    <SocketProvider>
+    <>
       <PopupFriendsManager
         show={showAddFriend}
         onClose={() => setShowAddFriend(false)}
@@ -345,7 +390,7 @@ export default function HomeChat() {
                         {chat.participants.find(p => p.user_id !== user?.id)?.user.name || "Unknown User"}
                       </span>
                       <span className={`text-xs ${selected?.id === chat.id ? 'text-blue-200' : 'text-gray-500 dark:text-gray-400'}`}>
-                        {convertUtcToDatePart(chat.last_message.updated_at, TypeDate.Hours, 7)}:{convertUtcToDatePart(chat.last_message.updated_at, TypeDate.Minutes, 7)}
+                        {convertUtcToDatePart(chat.last_message.updated_at, TypeDate.Hours, 7)?.toString().padStart(2, "0")}:{convertUtcToDatePart(chat.last_message.updated_at, TypeDate.Minutes, 7)?.toString().padStart(2, "0")}
                       </span>
                     </div>
                     <p className={`text-sm truncate ${selected?.id === chat.id ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'}`}>
@@ -359,12 +404,11 @@ export default function HomeChat() {
           <PanelResizeHandle className="w-1 bg-gray-200 dark:bg-gray-800 hover:bg-blue-500 transition-colors" />
           <Panel minSize={30}>
             {selected ? (
-              <ChatView id={selected.id.toString()}  userInfor={selected.participants.find(p => p.user_id !== user?.id)?.user} name={selected.participants.find(p => p.user_id !== user?.id)?.user.name || "Unknown User"}
+              <ChatView id={selected.id.toString()} userInfor={selected.participants.find(p => p.user_id !== user?.id)?.user} name={selected.participants.find(p => p.user_id !== user?.id)?.user.name || "Unknown User"}
                 img={
                   defaultProxyImageUrl(selected.participants.find(p => p.user_id !== user?.id)?.user.avatar || "")
-                }
-
-                chats={selected.messages || []} />
+                } onUpdateLastMessage={handleUpdateLastMessage}
+              />
             ) : (
               <div className="flex-col items-center justify-center h-full text-center bg-gray-100 dark:bg-gray-900 hidden md:flex">
                 <div className="p-6 bg-white dark:bg-gray-800 rounded-full">
@@ -381,7 +425,7 @@ export default function HomeChat() {
           </Panel>
         </PanelGroup>
       </div>
-    </SocketProvider>
+    </>
   );
 }
 

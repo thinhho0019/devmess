@@ -5,11 +5,10 @@ import { fetchConversations } from "../../api/conversation";
 
 export const useConversation = () => {
     // Add your hook logic here
-    const [loading, setLoading] = useState<boolean>(false);
+    const [loadingConversation, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [chats, setConversations] = useState<ChatMessage[]>([]);
-    useEffect(() => {
-        const load = async () => {
+    const load = async () => {
             setLoading(true);
             try {
                 const data: ChatMessage[] = await fetchConversations();
@@ -22,7 +21,8 @@ export const useConversation = () => {
                 setLoading(false);
             }
         };
+    useEffect(() => {
         void load();
     }, []);
-    return { loading, error, chats };
+    return { loadingConversation, error, chats, setConversations, reFetchConversation: load };
 }
