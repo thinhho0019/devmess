@@ -278,7 +278,7 @@ jobs:
             # Remove default nginx site to avoid conflicts
             sudo rm -f /etc/nginx/sites-enabled/default
 
-            sudo bash -c 'cat > /etc/nginx/sites-available/devmess.conf <<EOF
+            sudo bash -c 'cat > /etc/nginx/sites-available/devmess.conf <<'\''EOF'\''
             server {
               listen 80 default_server;
               listen [::]:80 default_server;
@@ -320,7 +320,7 @@ jobs:
 
               # Frontend - must be last to avoid catching API routes
               location / {
-                try_files \$uri \$uri/ /index.html;
+                try_files $uri $uri/ /index.html;
               }
 
               # Custom error pages
