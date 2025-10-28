@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 
 	"project/database"
@@ -12,6 +13,7 @@ import (
 	"project/service"
 	"project/websocket"
 
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -94,10 +96,14 @@ func main() {
 		conversationHandler,
 		messageHandler,
 	)
-
+	r.GET("/ping", func(c *gin.Context) {
+        c.JSON(http.StatusOK, gin.H{
+            "message": "pong",
+        })
+    })
 	// Google OAuth routes
 	r.GET("/api/v1/auth/google", authGoogleHandler.GoogleLoginHandler)
-	r.GET("/api/v1/auth/google/callback", authGoogleHandler.GoogleCallBackHandler)
+	r.GET("/api/auth/google/callback", authGoogleHandler.GoogleCallBackHandler)
 
 	// Start server
 	port := os.Getenv("PORT")

@@ -117,11 +117,6 @@ func (h *AuthGoogleHandler) GoogleCallBackHandler(c *gin.Context) {
 		frontendURL = os.Getenv("DEFAULT_URL")
 	}
 
-	if frontendURL == "" {
-		frontendURL = "http://localhost:3000" // fallback
-		log.Println("⚠️ [GoogleAuth] No frontend URL configured, using fallback:", frontendURL)
-	}
-
 	// Construct redirect URL with token and return path
 	redirectURL := fmt.Sprintf(
 		"%s/auth/success?token=%s&refresh_token=%s&return_url=%s",
@@ -140,10 +135,6 @@ func (h *AuthGoogleHandler) redirectToFrontendError(c *gin.Context, errMsg strin
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {
 		frontendURL = os.Getenv("DEFAULT_URL")
-	}
-
-	if frontendURL == "" {
-		frontendURL = "http://localhost:3000"
 	}
 
 	redirectURL := fmt.Sprintf(
