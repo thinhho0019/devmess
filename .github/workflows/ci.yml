@@ -40,7 +40,9 @@ jobs:
         env:
           VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
-        run: echo "VITE_WS_URL=${VITE_WS_URL}" > .env
+        run: |
+          echo "VITE_WS_URL=${VITE_WS_URL}" > .env
+          echo "VITE_API_URL=${VITE_API_URL}" >> .env
 
       - name: Build Vite project
         run: npm run build
@@ -83,7 +85,7 @@ jobs:
         with:
           name: backend-binary
           path: server/app
- 
+  
 
   # ---------- DEPLOY ----------
   deploy:
@@ -157,29 +159,48 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            # Redis
+            # ---------- Redis ----------
             if ! command -v redis-server &> /dev/null; then
+              echo "➡️ Installing Redis..."
               sudo apt update -y && sudo apt install -y redis-server
             fi
             sudo systemctl enable redis
             sudo systemctl start redis
 
-            # PostgreSQL
+            # ---------- PostgreSQL ----------
             if ! command -v psql &> /dev/null; then
-            sudo apt update -y && sudo apt install -y postgresql postgresql-contrib
+              echo "➡️ Installing PostgreSQL..."
+              sudo apt update -y && sudo apt install -y postgresql postgresql-contrib
+              sudo systemctl enable postgresql
+              sudo systemctl start postgresql
+            fi
 
-            # tạo user
-            sudo -u postgres psql -c "CREATE USER ${{ secrets.DB_USER }} WITH PASSWORD '${{ secrets.DB_PASSWORD }}';"
+            echo "➡️ Checking PostgreSQL user and database..."
 
-            # tạo database
-            sudo -u postgres psql -c "CREATE DATABASE ${{ secrets.DB_NAME }} OWNER ${{ secrets.DB_USER }};"
+            # ⚙️ Tạo user nếu chưa có
+            if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${{ secrets.DB_USER }}'" | grep -q 1; then
+              echo "➡️ Creating user ${{ secrets.DB_USER }}"
+              sudo -u postgres psql -c "CREATE USER ${{ secrets.DB_USER }} WITH PASSWORD '${{ secrets.DB_PASSWORD }}';"
+            else
+              echo "ℹ️ User ${{ secrets.DB_USER }} already exists"
+            fi
 
-            # cấp tất cả quyền trên database cho user
+            # ⚙️ Cấp toàn quyền cho user
+            sudo -u postgres psql -c "ALTER USER ${{ secrets.DB_USER }} WITH SUPERUSER CREATEDB CREATEROLE LOGIN PASSWORD '${{ secrets.DB_PASSWORD }}';"
+
+            # ⚙️ Tạo database nếu chưa có
+            if ! sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw "${{ secrets.DB_NAME }}"; then
+              echo "➡️ Creating database ${{ secrets.DB_NAME }}"
+              sudo -u postgres psql -c "CREATE DATABASE ${{ secrets.DB_NAME }} OWNER ${{ secrets.DB_USER }};"
+            else
+              echo "ℹ️ Database ${{ secrets.DB_NAME }} already exists"
+            fi
+
+            # ⚙️ Cấp quyền đầy đủ
             sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${{ secrets.DB_NAME }} TO ${{ secrets.DB_USER }};"
 
-            sudo systemctl enable postgresql
-            sudo systemctl start postgresql
-            fi
+            echo "✅ PostgreSQL setup completed."
+
 
       - name: Deploy Backend & Setup Nginx
         uses: appleboy/ssh-action@v1.0.3
@@ -190,11 +211,9 @@ jobs:
           script: |
             cd /var/www/devmess
 
-            # Grant execute
-            chmod +x server_bin/app
+            echo "➡️ Setting up backend service..."
 
-            # Copy .env
-            cp server_env/.env .env
+            chmod +x server_bin/app
 
             # Setup systemd service
             sudo bash -c 'cat > /etc/systemd/system/devmess-backend.service <<EOF
@@ -206,7 +225,6 @@ jobs:
             WorkingDirectory=/var/www/devmess
             ExecStart=/var/www/devmess/server_bin/app
             EnvironmentFile=/var/www/devmess/.env
-            # Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
             Restart=always
             [Install]
             WantedBy=multi-user.target
@@ -216,9 +234,46 @@ jobs:
             sudo systemctl enable devmess-backend.service
             sudo systemctl restart devmess-backend.service
 
-            # Setup Nginx
+            echo "✅ Backend service restarted."
+
+            # ---------- Setup Nginx ----------
             if ! command -v nginx &> /dev/null; then
+              echo "➡️ Installing Nginx..."
               sudo apt update -y && sudo apt install -y nginx
             fi
 
-            su
+            sudo bash -c 'cat > /etc/nginx/sites-available/devmess.conf <<EOF
+            server {
+              listen 80;
+              server_name _;
+              
+              root /var/www/devmess/frontend_dist;
+              index index.html;
+
+              location / {
+                try_files \$uri /index.html;
+              }
+
+              location /api/ {
+                proxy_pass http://127.0.0.1:8080/;
+                proxy_set_header Host \$host;
+                proxy_set_header X-Real-IP \$remote_addr;
+                proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto \$scheme;
+              }
+
+              location /ws/ {
+                proxy_pass http://127.0.0.1:8080/;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade \$http_upgrade;
+                proxy_set_header Connection "upgrade";
+                proxy_set_header Host \$host;
+              }
+            }
+            EOF'
+
+            sudo ln -sf /etc/nginx/sites-available/devmess.conf /etc/nginx/sites-enabled/devmess.conf
+            sudo nginx -t
+            sudo systemctl reload nginx
+
+            echo "✅ Nginx configured and reloaded."
