@@ -39,7 +39,8 @@ jobs:
       - name: Create .env file for production
         env:
           VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          # VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_API_URL: https://devmess.cloud/api/v1
         run: |
           echo "VITE_WS_URL=${VITE_WS_URL}" > .env
           echo "VITE_API_URL=${VITE_API_URL}" >> .env
