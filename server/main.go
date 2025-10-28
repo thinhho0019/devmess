@@ -96,8 +96,8 @@ func main() {
 	)
 
 	// Google OAuth routes
-	r.GET("/api/auth/google", authGoogleHandler.GoogleLoginHandler)
-	r.GET("/api/auth/google/callback", authGoogleHandler.GoogleCallBackHandler)
+	r.GET("/api/v1/auth/google", authGoogleHandler.GoogleLoginHandler)
+	r.GET("/api/v1/auth/google/callback", authGoogleHandler.GoogleCallBackHandler)
 
 	// Start server
 	port := os.Getenv("PORT")

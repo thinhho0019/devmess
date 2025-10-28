@@ -42,7 +42,7 @@ const GoogleLoginButton: React.FC<Props> = ({ onLogin }) => {
     const backendUrl =
       import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-    window.location.href = `${backendUrl}/api/auth/google`;
+    window.location.href = `${backendUrl}/auth/google`;
   };
 
   return (
