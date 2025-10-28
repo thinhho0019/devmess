@@ -39,7 +39,7 @@ const GoogleLoginButton: React.FC<Props> = ({ }) => {
     // Dùng origin của trang hiện tại, sẽ tự động là localhost hoặc devmess.cloud
     // Không cần truyền redirect_uri nếu backend đã dùng env GOOGLE_REDIRECT_URL
     const backendUrl =
-      process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
+      import.meta.env.VITE_API_URL || "http://localhost:8080";
 
     window.location.href = `${backendUrl}/api/auth/google`;
   };
