@@ -295,7 +295,7 @@ jobs:
               # Note: do NOT include a trailing slash in proxy_pass so Nginx will
               # forward the full original request path (e.g. /api/v1/...) to backend.
               location /api/ {
-                proxy_pass http://127.0.0.1:8080;
+                proxy_pass http://127.0.0.1:8080/;
                 proxy_redirect off;
 
                 proxy_set_header Host $host;
