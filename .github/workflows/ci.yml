@@ -293,41 +293,26 @@ jobs:
 
               # API v1 endpoints - forward to Go backend with /api/v1 prefix preserved
               location /api/ {
-                  proxy_pass http://127.0.0.1:8080/;  # 👈 quan trọng: có dấu / ở cuối
-                  proxy_redirect off;
+                proxy_pass http://127.0.0.1:8080/;  # CHÚ Ý có dấu / ở cuối
+                proxy_redirect off;
 
-                  proxy_connect_timeout 60s;
-                  proxy_send_timeout 60s;
-                  proxy_read_timeout 60s;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
 
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-
-                  proxy_intercept_errors off;
-                  proxy_pass_request_headers on;
-
-                  add_header Access-Control-Allow-Origin * always;
-                  add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
-                  add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
-              }
+                proxy_connect_timeout 60s;
+                proxy_send_timeout 60s;
+                proxy_read_timeout 60s;
+            }
 
               # WebSocket endpoint
               location /ws/ {
-                proxy_pass http://127.0.0.1:8080;
-                proxy_http_version 1.1;
-                proxy_set_header Upgrade \$http_upgrade;
-                proxy_set_header Connection "upgrade";
-                proxy_set_header Host \$host;
-                proxy_set_header X-Real-IP \$remote_addr;
-                proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto \$scheme;
-                
-                # WebSocket timeouts
-                proxy_connect_timeout 7d;
-                proxy_send_timeout 7d;
-                proxy_read_timeout 7d;
+                  proxy_pass http://127.0.0.1:8080/;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                  proxy_set_header Host $host;
               }
 
               # Frontend - must be last to avoid catching API routes
