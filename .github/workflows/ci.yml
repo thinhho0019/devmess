@@ -273,6 +273,7 @@ jobs:
             fi
 
             # Remove default nginx site to avoid conflicts
+            sudo rm /etc/nginx/sites-enabled/*devmess*
             sudo rm -f /etc/nginx/sites-enabled/default
 
             sudo bash -c 'cat > /etc/nginx/sites-available/devmess.conf <<'\''EOF'\''
