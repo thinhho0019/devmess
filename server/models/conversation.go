@@ -19,22 +19,8 @@ type Conversation struct {
 	UpdatedAt time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
 
-	LastMessage  *Message       `json:"last_message,omitempty" gorm:"-"` // Changed: remove foreignKey
 	Participants []*Participant `json:"participants,omitempty" gorm:"foreignKey:ConversationID;constraint:OnDelete:CASCADE"`
-	Messages     []*Message     `json:"messages,omitempty" gorm:"foreignKey:ConversationID;constraint:OnDelete:CASCADE"`
-}
+	// Messages     []*Message     `json:"messages,omitempty" gorm:"foreignKey:ConversationID;constraint:OnDelete:CASCADE"`
 
-func (Conversation) TableName() string {
-	return "conversations"
-}
-
-// AfterFind hook để load LastMessage manually
-func (c *Conversation) AfterFind(tx *gorm.DB) error {
-	if c.LastMessageID != nil {
-		var msg Message
-		if err := tx.First(&msg, "id = ?", c.LastMessageID).Error; err == nil {
-			c.LastMessage = &msg
-		}
-	}
-	return nil
+	LastMessage *Message `json:"last_message,omitempty" gorm:"foreignKey:LastMessageID;references:ID"`
 }

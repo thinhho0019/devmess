@@ -1,6 +1,7 @@
 package service
 
 import (
+	"log"
 	"project/models"
 	"project/repository"
 	"project/utils"
@@ -28,6 +29,8 @@ func (s *ConversationService) GetUserConversations(userID string, limit int, bef
 		return nil, err
 	}
 	r, err := s.conversationRepo.GetConversationsByUserID(uid, limit, before)
+	log.Println("[Get Conversation for user] ", r)
+	log.Println("[Get Conversation for user] ", err)
 	if err != nil {
 		return nil, err
 	}

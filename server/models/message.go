@@ -21,6 +21,6 @@ type Message struct {
 	UpdatedAt      time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt      gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
 
-	Sender       *User         `json:"sender,omitempty" gorm:"foreignKey:SenderID;references:ID;constraint:OnDelete:SET NULL;"`
-	Conversation *Conversation `json:"conversation,omitempty" gorm:"foreignKey:ConversationID;references:ID;constraint:OnDelete:CASCADE;"`
+	Sender       *User         `json:"sender,omitempty" gorm:"foreignKey:SenderID;constraint:OnDelete:SET NULL"`
+	// Conversation *Conversation `json:"conversation,omitempty" gorm:"foreignKey:ConversationID;constraint:OnDelete:CASCADE"`
 }
