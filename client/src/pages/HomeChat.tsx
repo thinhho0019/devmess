@@ -1,4 +1,4 @@
-import { useState, useEffect  } from "react";
+import { useState, useEffect } from "react";
 import { FaSearch } from "react-icons/fa";
 import { FiEdit, FiMoreHorizontal, FiSend, FiSmile, FiUsers } from "react-icons/fi";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -11,7 +11,7 @@ import { useAuth } from "../hooks/auth/is_login";
 import LoadingFullScreen from "../components/loading/LoadingFullScreen";
 import { useImage } from "../hooks/api/useImage";
 import LoadingComponent from "../components/loading/LoadingComponent";
-import {  useSocket } from "../contexts/SocketContext";
+import { useSocket } from "../contexts/SocketContext";
 import { PopupProfile } from "../components/modals/Profile";
 import { PopupFriendsManager } from "../components/modals/FriendsManager";
 import NotificationBell from "../components/notify/NotificationBell";
@@ -20,8 +20,8 @@ import { convertUtcToDatePart, TypeDate } from "../utils/date";
 import { defaultProxyImageUrl } from "../utils/image";
 
 import { useConversation } from "../hooks/chat/useConversation";
-import { useNavigate  } from "react-router-dom";
-
+import { useNavigate } from "react-router-dom";
+import avatarDefault from "../assets/admin.jpg"
 
 interface LastMessage {
   id: string;
@@ -304,6 +304,7 @@ export default function HomeChat() {
             {selected ? (
               <ChatView onUpdateLastMessage={handleUpdateLastMessage}
                 id={selected.id.toString()} chats={selected?.messages} name={selected.name} img={
+                  selected.id === "conversation_admin_default" ? avatarDefault :
                   defaultProxyImageUrl(selected.participants.find(p => p.user_id !== user?.id)?.user.avatar || "")
                 } is_mobile={isMobile} />
             ) : (
@@ -382,7 +383,9 @@ export default function HomeChat() {
                     : "hover:bg-gray-200 dark:hover:bg-gray-800"
                     }`}
                 >
-                  <Avatar src={defaultProxyImageUrl(chat.participants.find(p => p.user_id !== user?.id)?.user.avatar || "")
+                  <Avatar src={
+                    chat.id === "conversation_admin_default" ? avatarDefault :
+                      defaultProxyImageUrl(chat.participants.find(p => p.user_id !== user?.id)?.user.avatar || "")
                   } size="lg" online={chat.participants.find(p => p.user_id === user?.id)?.user.status === "true"} />
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center">
@@ -406,6 +409,7 @@ export default function HomeChat() {
             {selected ? (
               <ChatView id={selected.id.toString()} userInfor={selected.participants.find(p => p.user_id !== user?.id)?.user} name={selected.participants.find(p => p.user_id !== user?.id)?.user.name || "Unknown User"}
                 img={
+                  selected.id === "conversation_admin_default" ? avatarDefault :
                   defaultProxyImageUrl(selected.participants.find(p => p.user_id !== user?.id)?.user.avatar || "")
                 } onUpdateLastMessage={handleUpdateLastMessage}
               />

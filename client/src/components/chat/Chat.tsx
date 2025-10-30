@@ -39,7 +39,7 @@ const ChatView: React.FC<ChatProps> = ({
         if (user_id != userInfor.id) return;
         setStatus(newStatus);
     }
-    const { messages, chatContainerRef, sendMessage, addReaction, loadingMessages } = useChatManager(chats, current_user_id, userInfor.id || "", onUpdateLastMessage, handlerChangeStatus);
+    const { messages, chatContainerRef, sendMessage, addReaction, loadingMessages, conversation_id } = useChatManager(chats, current_user_id, userInfor.id || "", onUpdateLastMessage, handlerChangeStatus);
     const { showEmojiPopup, popupPosition, selectedMessageId, messageRefs, openEmojiPopup, closeEmojiPopup } = useEmojiManager();
     const [openProfile, setOpenProfile] = useState(false);
 
@@ -167,7 +167,11 @@ const ChatView: React.FC<ChatProps> = ({
                     onSelect={handleEmojiSelect}
                 />
             )}
-            <ChatInput onSend={sendMessage} />
+            <ChatInput onSend={sendMessage} 
+            placeholder={conversation_id === "conversation_admin_default" ?
+                 "Đây là tin nhắn thông báo bạn không được trả lời" 
+                 : "Nhập tin nhắn..."}
+            disabled={conversation_id === "conversation_admin_default" ? true : false} />
 
         </div>
     );

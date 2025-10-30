@@ -56,6 +56,7 @@ export default function ChatInput({
                             title="Emoji (placeholder)"
                             onClick={() => {
                                 // placeholder: open emoji picker
+                                if (disabled) return;
                                 setText((t) => t + "🙂");
                             }}
                         >

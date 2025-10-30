@@ -38,6 +38,60 @@ export const useChatManager = (initialChats: Messages[], currentUserId: string, 
     // Fetch messages when conversation_id changes (initial load only)
     useEffect(() => {
         if (conversation_id) {
+            if (conversation_id === "conversation_admin_default") {
+                setMessages([{
+                    id: "msg_admin_001",
+                    content: "This is a notification message. You cannot reply to this message.",
+                    conversation_id: "conversation_admin_default",
+                    sender_id: "admin_system",
+                    type: MessageType.SYSTEM,
+                    status: MessageStatus.SENT,
+                    is_edited: false,
+                    deleted: false,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    deleted_at: null,
+                    sender: {
+                        id: "admin_system",
+                        name: "System Admin",
+                        email: "",
+                        provider: "system",
+                        created_at: new Date().toISOString(),
+                        status: "online",
+                        last_seen: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        devices: null,
+                        participants: null,
+                        avatar: ''
+                    }
+                },{
+                    id: "msg_admin_001",
+                    content: "Xin chào các bạn đã đến với hệ thống chat của chúng tôi! Đây là tin nhắn thông báo bạn không được trả lời.Hiện tại hệ thống vẫn còn trong giai đoạn phát triển, các chức năng nhắn tin giữa các người dùng hầu như hoạt động ổn định rồi! chúc các bạn 1 ngày tốt lành",
+                    conversation_id: "conversation_admin_default",
+                    sender_id: "admin_system",
+                    type: MessageType.TEXT,
+                    status: MessageStatus.SENT,
+                    is_edited: false,
+                    deleted: false,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    deleted_at: null,
+                    sender: {
+                        id: "admin_system",
+                        name: "System Admin",
+                        email: "",
+                        provider: "system",
+                        created_at: new Date().toISOString(),
+                        status: "online",
+                        last_seen: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        devices: null,
+                        participants: null,
+                        avatar: ''
+                    }
+                }]);
+                return;
+            }
             setLoadingMessages(true);
             fetchMessages(conversation_id, 50, new Date())
                 .then((data) => {
@@ -101,6 +155,7 @@ export const useChatManager = (initialChats: Messages[], currentUserId: string, 
                         break;
                     }
                     case 'is_online_response': {
+                        if (conversation_id === "conversation_admin_default")break; 
                         const { user_id, is_online, time_online } = eventData;
                         console.log(`User ${user_id} is ${is_online ? 'online' : 'offline'}`);
                         const message_show = is_online ? 'online' : `offline since ${convertTimeToOnlineStatus(time_online)}`;
@@ -245,6 +300,6 @@ export const useChatManager = (initialChats: Messages[], currentUserId: string, 
         chatContainerRef,
         sendMessage,
         addReaction,
-        loadingMessages
+        loadingMessages,conversation_id
     };
 };
