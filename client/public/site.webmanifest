@@ -1,0 +1,84 @@
+{
+  "name": "DevMess - Secure Messaging",
+  "short_name": "DevMess",
+  "description": "Secure, fast, and private messaging application with end-to-end encryption",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1F2937",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait-primary",
+  "categories": ["communication", "social", "productivity"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Chat",
+      "short_name": "Chat",
+      "description": "Start a new conversation",
+      "url": "/t",
+      "icons": [
+        {
+          "src": "/favicon-32x32.png",
+          "sizes": "32x32"
+        }
+      ]
+    },
+    {
+      "name": "Login",
+      "short_name": "Login",
+      "description": "Login to your account",
+      "url": "/l",
+      "icons": [
+        {
+          "src": "/favicon-32x32.png",
+          "sizes": "32x32"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/app-screenshot-wide.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "DevMess Desktop Interface"
+    },
+    {
+      "src": "/app-screenshot-narrow.jpg",
+      "sizes": "750x1334",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "DevMess Mobile Interface"
+    }
+  ]
+}

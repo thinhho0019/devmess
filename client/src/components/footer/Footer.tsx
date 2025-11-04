@@ -4,7 +4,11 @@ import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 
 export default function Footer() {
-  const { t } = useTranslation();
+  const { t, ready } = useTranslation();
+
+  // Debug log
+  console.log('Footer i18n ready:', ready);
+  console.log('Footer translation test:', t("footer_description", "Default description"));
 
   return (
     <footer className="relative z-10 border-t border-gray-800/50 bg-gradient-to-b from-gray-900/50 to-black/80 backdrop-blur-sm">
@@ -23,7 +27,7 @@ export default function Footer() {
               {t("header_title")}
             </h3>
             <p className="text-gray-400 text-sm leading-relaxed max-w-md">
-              {t("footer_description")}
+              {t("footer_description", "Modern, secure, and fast chat application. Connect with friends easily and safely.")}
             </p>
           </motion.div>
 
@@ -35,19 +39,19 @@ export default function Footer() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-center"
           >
-            <h4 className="text-lg font-semibold text-white mb-4">{t("footer_quick_links")}</h4>
+            <h4 className="text-lg font-semibold text-white mb-4">{t("footer_quick_links", "Quick Links")}</h4>
             <nav className="space-y-2">
               <a href="#features" className="block text-gray-400 hover:text-blue-400 transition-colors">
-                {t("features")}
+                {t("features", "Features")}
               </a>
               <a href="#how-it-works" className="block text-gray-400 hover:text-blue-400 transition-colors">
-                {t("how_it_works")}
+                {t("how_it_works", "How It Works")}
               </a>
               <a href="#testimonials" className="block text-gray-400 hover:text-blue-400 transition-colors">
-                {t("testimonials")}
+                {t("testimonials", "Testimonials")}
               </a>
               <Link to="/l" className="block text-gray-400 hover:text-blue-400 transition-colors">
-                {t("launch_app")}
+                {t("launch_app", "Launch App")}
               </Link>
             </nav>
           </motion.div>
@@ -60,7 +64,7 @@ export default function Footer() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-center lg:text-right"
           >
-            <h4 className="text-lg font-semibold text-white mb-4">{t("footer_contact")}</h4>
+            <h4 className="text-lg font-semibold text-white mb-4">{t("footer_contact", "Contact")}</h4>
             <div className="space-y-3">
               <motion.a
                 href="mailto:hoxuanthinh68@gmail.com"
@@ -96,14 +100,14 @@ export default function Footer() {
           >
             {/* Copyright */}
             <div className="flex items-center space-x-2 text-gray-400 text-sm">
-              <span>{t("footer_copyright_prefix")}</span>
+              <span>{t("footer_copyright_prefix", "© 2025 Made with")}</span>
               <motion.span
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 1, repeat: Infinity }}
               >
                 <FiHeart className="w-4 h-4 text-red-500" />
               </motion.span>
-              <span>{t("footer_copyright_by")}</span>
+              <span>{t("footer_copyright_by", "by")}</span>
               <motion.span
                 whileHover={{ scale: 1.1 }}
                 className="font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
@@ -114,7 +118,7 @@ export default function Footer() {
 
             {/* Tech Stack */}
             <div className="flex items-center space-x-4 text-xs text-gray-500">
-              <span>{t("footer_built_with")}</span>
+              <span>{t("footer_built_with", "Built with React + TypeScript + Vite")}</span>
             </div>
           </motion.div>
         </div>

@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://devmess.cloud/sitemap.xml
+
+# Disallow private areas
+Disallow: /api/
+Disallow: /admin/
+Disallow: /.env
+Disallow: /logs/
+
+# Allow important pages
+Allow: /
+Allow: /l
+Allow: /r
+Allow: /t
+
+# Crawl delay (optional)
+Crawl-delay: 1
