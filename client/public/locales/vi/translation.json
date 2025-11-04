@@ -35,6 +35,12 @@
   "cta_title": "Sẵn sàng trải nghiệm nhắn tin an toàn?",
   "cta_subtitle": "Tham gia hàng nghìn người dùng tin tưởng DevMess cho các cuộc trò chuyện riêng tư của họ.",
   "cta_button": "Bắt đầu ngay",
+  "footer_description": "Ứng dụng chat hiện đại, bảo mật và nhanh chóng. Kết nối với bạn bè một cách dễ dàng và an toàn.",
+  "footer_quick_links": "Liên kết nhanh",
+  "footer_contact": "Liên hệ",
+  "footer_copyright_prefix": "© 2025 Được tạo với",
+  "footer_copyright_by": "bởi",
+  "footer_built_with": "Xây dựng với React + TypeScript + Vite",
   "footer_copyright": "© 2025 DevMess. Mọi quyền được bảo lưu.",
   "footer_tagline": "Định nghĩa lại sự riêng tư."
 }

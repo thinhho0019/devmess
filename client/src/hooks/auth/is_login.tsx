@@ -7,10 +7,12 @@ export function useAuth(requireAuth = false) {
     const [user, setUser] = useState<UserResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
-
+    const location = window.location.pathname;
+    
     useEffect(() => {
+        
         const token = localStorage.getItem("access_token");
-
+        const isPageLogin = location === "/l" || location === "/r";
         // 🔹 Nếu không có token và trang yêu cầu login
         if (!token) {
             if (requireAuth) navigate("/l");
@@ -23,7 +25,8 @@ export function useAuth(requireAuth = false) {
             try {
                  
                 const response = await api.get('/auth-me');
-                 
+                
+                
                 
                 // Kiểm tra nếu response không phải JSON
                 if (typeof response.data === 'string' && response.data.includes('<html>')) {
@@ -32,7 +35,10 @@ export function useAuth(requireAuth = false) {
                 
                 const data: UserResponse = response.data;
                 console.log("✅ Parsed user data:", data);
-                
+                // if current page login and authenticated, redirect to home
+                if (requireAuth && data && isPageLogin) {
+                    navigate("/t");
+                }
                 // Lưu thông tin user vào localStorage
                 if (data) {
                     localStorage.setItem("email", data.email || "");
@@ -70,7 +76,7 @@ export function useAuth(requireAuth = false) {
         };
 
         checkAuth();
-    }, [requireAuth, navigate]);
+    }, [requireAuth, navigate,location]);
     
     return { user, loading, isAuthenticated: !!user };
 }

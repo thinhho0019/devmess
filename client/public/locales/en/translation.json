@@ -35,6 +35,13 @@
   "cta_title": "Ready to Experience Secure Messaging?",
   "cta_subtitle": "Join thousands of users who trust DevMess for their private conversations.",
   "cta_button": "Get Started Now",
+  "footer_description": "Modern, secure, and fast chat application. Connect with friends easily and safely.",
+  "footer_quick_links": "Quick Links",
+  "footer_contact": "Contact",
+  "footer_copyright_prefix": "© 2025 Made with",
+  "footer_copyright_by": "by",
+  "footer_built_with": "Built with React + TypeScript + Vite",
   "footer_copyright": "© 2025 DevMess. All Rights Reserved.",
   "footer_tagline": "Privacy, redefined."
+  
 }

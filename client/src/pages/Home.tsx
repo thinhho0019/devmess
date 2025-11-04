@@ -6,6 +6,8 @@ import type { Variants } from "framer-motion";
  
 import imgAvatar from "../assets/img.jpg";
 import { LanguageDropdown } from "../components/dropdown/LanguageDropdown";
+import { Footer } from "../components/footer";
+import { ScrollToTop } from "../components/scrollToTop";
 
 const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 40 },
@@ -355,6 +357,12 @@ export default function HomePage() {
           </Link>
         </motion.div>
       </section>
+
+      {/* Footer */}
+      <Footer />
+
+      {/* Scroll to Top Button */}
+      <ScrollToTop />
     </div>
   );
 }

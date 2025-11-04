@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { UserPlus, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
 import GoogleLoginButton from "../components/button/GoogleLoginButton";
 import { registerUser } from "../services";
+import { useAuth } from "../hooks/auth/is_login";
 
 const PasswordRequirement: React.FC<{ isValid: boolean; text: string }> = ({ isValid, text }) => (
     <div className={`flex items-center transition-colors duration-300 ${isValid ? 'text-green-400' : 'text-gray-500'}`}>
@@ -22,6 +23,7 @@ const Register: React.FC = () => {
         length: false,
         uppercase: false,
     });
+    const { } = useAuth(true);
     const [confirmPassword, setConfirmPassword] = useState("");
     const [notify, setNotify] = useState("");
     const [showPassword, setShowPassword] = useState(false);

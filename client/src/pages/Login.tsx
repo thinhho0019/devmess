@@ -4,11 +4,12 @@ import { motion } from "framer-motion";
 import { LogIn } from "lucide-react";
 import GoogleLoginButton from "../components/button/GoogleLoginButton";
 import { loginUser } from "../services";
+import { useAuth } from "../hooks/auth/is_login";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  
+  const { } = useAuth(true);
   const [notify, setNotify] = useState("");
   const navigate = useNavigate();
 
