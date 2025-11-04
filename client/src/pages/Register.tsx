@@ -23,7 +23,7 @@ const Register: React.FC = () => {
         length: false,
         uppercase: false,
     });
-    const { } = useAuth(true);
+    useAuth(true); // Hook call without destructuring to avoid empty pattern
     const [confirmPassword, setConfirmPassword] = useState("");
     const [notify, setNotify] = useState("");
     const [showPassword, setShowPassword] = useState(false);

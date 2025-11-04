@@ -9,7 +9,7 @@ import { useAuth } from "../hooks/auth/is_login";
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { } = useAuth(true);
+  useAuth(true); // Hook call without destructuring to avoid empty pattern
   const [notify, setNotify] = useState("");
   const navigate = useNavigate();
 
