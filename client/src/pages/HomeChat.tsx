@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { FaSearch } from "react-icons/fa";
 import { FiEdit, FiMoreHorizontal, FiSend, FiSmile, FiUsers } from "react-icons/fi";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import imgAvatar from "../assets/img.jpg";
+ 
 import { Avatar } from "../components/avatar";
 import { ChatView } from "../components/chat";
 
