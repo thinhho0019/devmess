@@ -293,9 +293,14 @@ export default function HomeChat() {
                 <div key={chat.id} onClick={() => handlerClickChat(chat)} className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer">
                   <div className={`relative p-0.5 rounded-full ${selected?.id === chat.id ? 'ring-2 ring-blue-500' : ''}`}>
 
-                    <Avatar src={imgAvatar} size="lg" online={chat.participants.find(p => p.user_id === user?.id)?.user.status === "true"} />
+                    <Avatar src={
+                      chat.id === "conversation_admin_default" ? avatarDefault :
+                        defaultProxyImageUrl(chat.participants.find(p => p.user_id !== user?.id)?.user.avatar || "")
+                    } size="lg" online={chat.participants.find(p => p.user_id === user?.id)?.user.status === "true"} />
                   </div>
-                  <span className={`text-xs truncate w-16 text-center ${selected?.id === chat.id ? 'font-semibold text-blue-500' : 'text-gray-600 dark:text-gray-400'}`}>{chat.name}</span>
+                  <span className={`text-xs truncate w-16 text-center ${selected?.id === chat.id ? 'font-semibold text-blue-500' : 'text-gray-600 dark:text-gray-400'}`}>
+                    {chat.participants.find(p => p.user_id !== user?.id)?.user.name || "Unknown User"}
+                  </span>
                 </div>
               ))}
             </div>
@@ -305,7 +310,7 @@ export default function HomeChat() {
               <ChatView onUpdateLastMessage={handleUpdateLastMessage}
                 id={selected.id.toString()} chats={selected?.messages} name={selected.name} img={
                   selected.id === "conversation_admin_default" ? avatarDefault :
-                  defaultProxyImageUrl(selected.participants.find(p => p.user_id !== user?.id)?.user.avatar || "")
+                    defaultProxyImageUrl(selected.participants.find(p => p.user_id !== user?.id)?.user.avatar || "")
                 } is_mobile={isMobile} />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center px-6">
@@ -410,7 +415,7 @@ export default function HomeChat() {
               <ChatView id={selected.id.toString()} userInfor={selected.participants.find(p => p.user_id !== user?.id)?.user} name={selected.participants.find(p => p.user_id !== user?.id)?.user.name || "Unknown User"}
                 img={
                   selected.id === "conversation_admin_default" ? avatarDefault :
-                  defaultProxyImageUrl(selected.participants.find(p => p.user_id !== user?.id)?.user.avatar || "")
+                    defaultProxyImageUrl(selected.participants.find(p => p.user_id !== user?.id)?.user.avatar || "")
                 } onUpdateLastMessage={handleUpdateLastMessage}
               />
             ) : (
