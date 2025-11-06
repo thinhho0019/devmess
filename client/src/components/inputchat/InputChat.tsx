@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
+import { FiPaperclip, FiSmile, FiX, FiSend, FiLoader } from "react-icons/fi";
+import EmojiPicker from "../emoji/EmojiPicker";
 
 interface ChatInputProps {
     value?: string;
@@ -17,6 +19,7 @@ export default function ChatInput({
     const [text, setText] = useState(value);
     const [file, setFile] = useState<File | null>(null);
     const [isSending, setIsSending] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
     useEffect(() => {
@@ -45,27 +48,76 @@ export default function ChatInput({
         }
     };
 
+    const handleEmojiSelect = (emoji: string) => {
+        setText(prev => prev + emoji);
+        // Focus back to textarea after selecting emoji
+        setTimeout(() => textareaRef.current?.focus(), 100);
+    };
+
+    const toggleEmojiPicker = () => {
+        setShowEmojiPicker(prev => !prev);
+    };
+
     return (
         <div className="w-full h-full border-t bg-white dark:bg-slate-900 dark:border-slate-800 p-3 content-center justify-self-center-safe   ">
             <div className="flex gap-2 max-w-4xl mx-auto">
                 <div className="flex bg-[#212121]/90 w-full  content-center rounded-s-xl rounded-lg border border-slate-700">
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            className="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
-                            title="Emoji (placeholder)"
-                            onClick={() => {
-                                // placeholder: open emoji picker
-                                if (disabled) return;
-                                setText((t) => t + "🙂");
-                            }}
-                        >
-                            <svg className="w-6 h-6 text-slate-600 dark:text-slate-300" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 17c2.21 0 4-1.79 4-4H8c0 2.21 1.79 4 4 4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M9 9h.01M15 9h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        </button>
+                    <div className="flex items-center gap-2 ml-2">
+
+                        <label className="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer flex items-center" title="Attach file">
+                            <input
+                                type="file"
+                                className="hidden"
+                                disabled={disabled}
+                                onChange={(e) => {
+                                    const f = e.target.files?.[0] ?? null;
+                                    setFile(f);
+                                }}
+                                aria-label="Attach file"
+                            />
+                            <FiPaperclip className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+
+
+                        </label>
+
+                        {file && (
+                            <div className="flex items-center gap-2 px-2">
+                                <span className="text-xs text-slate-600 dark:text-slate-300 max-w-[140px] truncate" title={file.name}>
+                                    {file.name}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setFile(null)}
+                                    className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    aria-label="Remove attached file"
+                                    title="Remove file"
+                                >
+                                    <FiX className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="relative">
+                            <button
+                                type="button"
+                                className={`p-2 rounded-md transition-colors ${
+                                    showEmojiPicker 
+                                        ? "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400" 
+                                        : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                                }`}
+                                title="Emoji picker"
+                                onClick={toggleEmojiPicker}
+                                disabled={disabled}
+                            >
+                                <FiSmile className="w-5 h-5" />
+                            </button>
+
+                            <EmojiPicker
+                                isOpen={showEmojiPicker}
+                                onClose={() => setShowEmojiPicker(false)}
+                                onEmojiSelect={handleEmojiSelect}
+                            />
+                        </div>
                     </div>
 
                     <div className="flex-1">
@@ -95,14 +147,9 @@ export default function ChatInput({
                         title="Send"
                     >
                         {isSending ? (
-                            <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24">
-                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round" />
-                            </svg>
+                            <FiLoader className="w-5 h-5 animate-spin" />
                         ) : (
-                            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M22 2L11 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
+                            <FiSend className="w-5 h-5" />
                         )}
                     </button>
                 </div>

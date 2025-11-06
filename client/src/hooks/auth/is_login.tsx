@@ -48,6 +48,8 @@ export function useAuth(requireAuth = false) {
                     localStorage.setItem("updatedAt", data.updatedAt || "");
                     // ID có thể hữu ích cho các API calls khác
                     if (data.id) localStorage.setItem("user_id", data.id.toString());
+                }else{
+                    navigate("/l");
                 }
                 
                 setUser(data);
