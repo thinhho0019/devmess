@@ -8,6 +8,8 @@ import { fetchAddFriend, cancelFriendRequest, acceptFriendRequest, rejectFriendR
 import { useListInvite } from "../../hooks/api/useListInvite";
 import { useListFriend } from "../../hooks/api/useListFriend";
 import { useSocket } from "../../hooks/socket/useSocket";
+import { fetchFindConversationTwoUsers } from "../../api/conversation";
+import { useNavigate } from "react-router-dom";
 
 // Friend status types
 const FriendStatus = {
@@ -47,25 +49,26 @@ export const PopupFriendsManager = ({
 }: PopupFriendsManagerProps) => {
     const [activeTab, setActiveTab] = useState<TabType>('search');
     const { invites, loading, error, refetch } = useListInvite();
-    const {listFriends,refetchFriends} = useListFriend();
+    const { listFriends, refetchFriends } = useListFriend();
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<typeof friendsList>([]);
+    const navigate = useNavigate();
     // eslint-disable-next-line
-    const { lastMessage  } = useSocket();
+    const { lastMessage } = useSocket();
     // receive websocket message to update friend list in real-time
     useEffect(() => {
         if (lastMessage !== null) {
             try {
                 const eventData = JSON.parse(lastMessage.data);
                 switch (eventData.type) {
-                    case 'friend_invite': 
+                    case 'friend_invite':
                         refetch();
                         return;
                     case 'update_friend':
                         refetchFriends();
                         return;
                 }
-                
+
             } catch (error) {
                 console.log(error);
                 console.log("Received non-JSON or malformed data:", lastMessage.data);
@@ -87,28 +90,28 @@ export const PopupFriendsManager = ({
         // Sync statuses when friendsList, invites, or listFriends changes
         setStatuses((prev) => {
             const next = { ...prev };
-            
+
             // Sync from friendsList prop
             friendsList.forEach((f) => {
                 if (f.id && f.status) {
                     next[f.id] = f.status;
                 }
             });
-            
+
             // Add invites status (incoming requests)
             (invites || []).forEach((invite) => {
                 if (invite.id) {
                     next[invite.id] = 'pending';
                 }
             });
-            
+
             // Add friends status (accepted friends)
             (listFriends || []).forEach((friend) => {
                 if (friend.id) {
                     next[friend.id] = 'friend';
                 }
             });
-            
+
             return next;
         });
     }, [friendsList, invites, listFriends]);
@@ -228,9 +231,17 @@ export const PopupFriendsManager = ({
     };
 
     // Start chat with friend
-    const handleStartChat = (userId: string) => {
+    const handleStartChat = async (userId: string) => {
         // TODO: Navigate to chat with this user
         console.log("Starting chat with user:", userId);
+        const conversationId = await fetchFindConversationTwoUsers(userId);
+        console.log("Fetched conversation ID:", conversationId);
+        if (!conversationId) {
+            console.error("No conversation found between users.");
+            return;
+        }
+        navigate(`/t/${conversationId}`);
+        console.log("Found conversation ID:", conversationId);
         // Close modal and potentially navigate to chat
         handleClose();
     };
@@ -289,7 +300,7 @@ export const PopupFriendsManager = ({
                     </div>
                 );
             case 'friend':
-                return(
+                return (
                     <button
                         onClick={() => handleStartChat(user.id)}
                         className="flex items-center gap-1 bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded-lg text-sm font-medium"

@@ -231,6 +231,8 @@ export default function HomeChat() {
   const { user, loading, isAuthenticated } = useAuth(true);
   console.log("User data:", user);
   const { loadingImage, src } = useImage(urlImage || "");
+  const urlParams = new URLSearchParams(window.location.search);
+  const conversationId = window.location.pathname.split("/t/")[1] || urlParams.get("conversation_id");
   console.log("Image src:", src);
   const handlerAddFriend = async (friend_id: string) => {
     await fetchAddFriend(friend_id);
@@ -247,15 +249,13 @@ export default function HomeChat() {
   ];
   // Auto-select conversation based on URL param
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const conversationId = window.location.pathname.split("/t/")[1] || urlParams.get("conversation_id");
     if (conversationId && chats.length > 0) {
       const chat = chats.find(c => c.id === conversationId);
       if (chat) {
         setSelected(chat);
       }
     }
-  }, [chats]);
+  }, [chats,conversationId]);
   if (!isAuthenticated) {
     return;
   } else if (loading) {

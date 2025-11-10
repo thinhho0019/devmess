@@ -18,6 +18,7 @@ func ConversationRouter(r *gin.Engine,
 			{
 				conversations.GET("/", conversationHandler.GetUserConversationsByUserID)
 				conversations.GET("/messages/", conversationHandler.GetMessageByConversationID)
+				conversations.POST("/find-conversation", conversationHandler.FindConversationByUser)
 			}
 		}
 	}

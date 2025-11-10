@@ -58,7 +58,7 @@ func main() {
 	// Initialize services
 	authService := service.NewAuthService(userRepo, deviceRepo, tokenRepo, redisRepo, googleOAuthConfig)
 	userService := service.NewUserService(userRepo)
-	conversationService := service.NewConversationService(conversationRepo, participantRepo, messageRepo)
+	conversationService := service.NewConversationService(conversationRepo, participantRepo, messageRepo, redisRepo)
 	messageService := service.NewMessageService(messageRepo, conversationRepo)
 	friendService := service.NewInitFriendService(friendRepo, userRepo)
 	participantService := service.NewParticipantService(participantRepo, redisRepo)
@@ -97,10 +97,10 @@ func main() {
 		messageHandler,
 	)
 	r.GET("/ping", func(c *gin.Context) {
-        c.JSON(http.StatusOK, gin.H{
-            "message": "pong",
-        })
-    })
+		c.JSON(http.StatusOK, gin.H{
+			"message": "pong",
+		})
+	})
 	// Google OAuth routes
 	r.GET("/api/v1/auth/google", authGoogleHandler.GoogleLoginHandler)
 	r.GET("/api/auth/google/callback", authGoogleHandler.GoogleCallBackHandler)

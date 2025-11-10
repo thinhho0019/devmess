@@ -11,6 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type FindUserConversationRequest struct {
+	UserID string `json:"user_id" binding:"required"`
+}
 type ConversationHandler struct {
 	conversationService *service.ConversationService
 }
@@ -64,6 +67,33 @@ func (h *ConversationHandler) GetUserConversationsByUserID(c *gin.Context) {
 	// 5️⃣ Trả kết quả
 	c.JSON(http.StatusOK, gin.H{
 		"conversations": conversations,
+	})
+}
+
+func (h *ConversationHandler) FindConversationByUser(c *gin.Context) {
+	var req FindUserConversationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	userValue, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found in context"})
+		return
+	}
+	user, ok := userValue.(*models.User)
+	if !ok || user == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user type"})
+		return
+	}
+
+	conversation, err := h.conversationService.FindConversationBytwoUserIDs(user.ID.String(), req.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"conversation_id": conversation.ID,
 	})
 }
 

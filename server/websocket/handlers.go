@@ -13,12 +13,14 @@ type WsHandler struct {
 	Hub         *Hub
 	AuthService *service.AuthService
 }
+
 func NewWsHandler(hub *Hub, authService *service.AuthService) *WsHandler {
 	return &WsHandler{
 		Hub:         hub,
 		AuthService: authService,
 	}
 }
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -52,7 +54,7 @@ func (h *WsHandler) ServeWs() gin.HandlerFunc {
 			return
 		}
 
-		log.Printf("🔐 [ServeWs] Verifying token for WebSocket connection: %s", token)
+		// log.Printf("🔐 [ServeWs] Verifying token for WebSocket connection: %s", token)
 		user, _, err := h.AuthService.VerifyAccessToken(token)
 		if err != nil {
 			log.Printf("❌ [ServeWs] Authentication failed: %v", err)

@@ -12,13 +12,15 @@ type ConversationService struct {
 	conversationRepo repository.ConversationRepository
 	messageRepo      repository.MessageRepository
 	participantRepo  repository.ParticipantRepository
+	redisRepo        repository.RedisRepository
 }
 
-func NewConversationService(conversationRepo repository.ConversationRepository, participantRepo repository.ParticipantRepository, messageRepo repository.MessageRepository) *ConversationService {
+func NewConversationService(conversationRepo repository.ConversationRepository, participantRepo repository.ParticipantRepository, messageRepo repository.MessageRepository, redisRepo repository.RedisRepository) *ConversationService {
 	return &ConversationService{
 		conversationRepo: conversationRepo,
 		participantRepo:  participantRepo,
 		messageRepo:      messageRepo,
+		redisRepo:        redisRepo,
 	}
 }
 
@@ -88,4 +90,23 @@ func (s *ConversationService) SendMessage(conversationID string, senderID string
 		return nil, err
 	}
 	return message, nil
+}
+func (s *ConversationService) FindConversationBytwoUserIDs(userID1 string, userID2 string) (*models.Conversation, error) {
+	if conversation, err := s.redisRepo.GetConversationIDByTwoUserID(userID1, userID2); err == nil {
+		return conversation, nil
+	}
+	uid1, err := utils.StringToUUID(userID1)
+	if err != nil {
+		return nil, err
+	}
+	uid2, err := utils.StringToUUID(userID2)
+	if err != nil {
+		return nil, err
+	}
+	conversation, err := s.conversationRepo.FindConversationByTwoUserID(uid1, uid2)
+	s.redisRepo.SetKeyConversationTwoUserID(userID1, userID2, conversation, 0)
+	if err != nil {
+		return nil, err
+	}
+	return conversation, nil
 }

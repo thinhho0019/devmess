@@ -28,6 +28,7 @@ type ConversationRepository interface {
 	GetDirectConversation(userID1, userID2 uuid.UUID) (*models.Conversation, error)
 	GetConversationWithParticipants(conversationID uuid.UUID) (*models.Conversation, error)
 	GetMessageByConversationID(conversationID uuid.UUID, limit int, before *time.Time) ([]*models.Message, error)
+	FindConversationByTwoUserID(userID1 uuid.UUID, userID2 uuid.UUID) (*models.Conversation, error)
 }
 
 type conversationRepo struct {
@@ -295,5 +296,22 @@ func (r *conversationRepo) GetConversationWithParticipants(conversationID uuid.U
 		return nil, fmt.Errorf("failed to get conversation with participants: %w", err)
 	}
 
+	return &conversation, nil
+}
+
+func (r *conversationRepo) FindConversationByTwoUserID(userID1 uuid.UUID, userID2 uuid.UUID) (*models.Conversation, error) {
+	var conversation models.Conversation
+	err := r.db.Table("conversations").
+		Joins("JOIN participants p1 ON p1.conversation_id = conversations.id").
+		Joins("JOIN participants p2 ON p2.conversation_id = conversations.id").
+		Where("conversations.type = ?", "direct").
+		Where("p1.user_id = ? AND p2.user_id = ?", userID1, userID2).
+		First(&conversation).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find conversation by two user IDs: %w", err)
+	}
 	return &conversation, nil
 }
